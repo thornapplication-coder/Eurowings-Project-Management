@@ -396,9 +396,9 @@
     body.print-custom > *{display:none!important}
     body.print-custom > #printArea{display:block!important}
     #printArea .print-head2{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--ew-magenta);padding-bottom:8px;margin-bottom:10px;font-size:12px;color:var(--ew-magenta-dark)}
-    #printArea table{width:100%;border-collapse:collapse;font-size:8.5px}
-    #printArea th{background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:4px 6px;border:1px solid #ddd}
-    #printArea td{padding:3px 6px;border:1px solid #ddd;vertical-align:top}
+    #printArea table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:8px}
+    #printArea th{background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:4px 6px;border:1px solid #ddd;word-break:break-word;overflow-wrap:anywhere}
+    #printArea td{padding:3px 6px;border:1px solid #ddd;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}
     #printArea tr{break-inside:avoid}
   }
 </style>
