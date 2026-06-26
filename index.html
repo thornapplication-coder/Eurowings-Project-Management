@@ -432,6 +432,7 @@
     <div class="tab" data-tab="todo">✅ To-Do</div>
     <div class="tab" data-tab="report">📄 Report</div>
     <span style="flex:1"></span>
+    <button class="btn" id="saveBtn" onclick="saveNow(event)" title="Save now to this device (and the cloud when signed in)">💾 Save</button>
     <span id="syncBadge" class="syncbadge s-off" title="Sync status"></span>
     <button class="btn ghost" onclick="window.print()">🖨 Print this page / PDF</button>
   </div>
@@ -765,6 +766,7 @@ const VIEWLBL = {portfolio:"Portfolio overview",dash:"Dashboard",table:"Master T
 const MONTHS_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 let PROJECTS = [], ACTIVE = 0, DATA = [], UID = 0, VIEW = "portfolio", REPORTTYPE = "project";
+let LOCAL_TS = 0;   // timestamp of the locally stored portfolio (for cloud merge by recency)
 
 /* ---------- helpers ---------- */
 const pad = n => String(n).padStart(2,"0");
@@ -883,12 +885,20 @@ function criticalPath(tasks){
 }
 function setActive(i){ ACTIVE=Math.max(0,Math.min(i,PROJECTS.length-1)); DATA=PROJECTS[ACTIVE].tasks;
   UID=DATA.reduce((m,d)=>Math.max(m,d.uid),-1)+1; recompute(); }
-function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify({active:PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].id,projects:PROJECTS})); }catch(e){} }
+function saveLocal(){ try{ LOCAL_TS=Date.now(); localStorage.setItem(KEY, JSON.stringify({ts:LOCAL_TS,active:PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].id,projects:PROJECTS})); }catch(e){} }
 function save(){ saveLocal(); scheduleCloudSave(); }
+// manual "Save now" (header button on every page): persist locally and, if signed in, push to the cloud immediately
+async function saveNow(ev){
+  const btn=ev&&ev.currentTarget;
+  saveLocal(); markSaved();
+  if(typeof sb!=="undefined" && sb && USER){ try{ await cloudSaveNow(); }catch(e){ syncStatus("error"); } }
+  else { syncStatus("local"); }
+  if(btn){ const t=btn.innerHTML; btn.innerHTML="✓ Saved"; btn.disabled=true; setTimeout(()=>{ btn.innerHTML=t; btn.disabled=false; },1200); }
+}
 function load(){
   let s=null; try{ s=localStorage.getItem(KEY); }catch(e){}
   if(s){ try{ const o=JSON.parse(s); if(o&&o.projects&&o.projects.length){ PROJECTS=o.projects; PROJECTS.forEach(recomputeProject);
-      const i=PROJECTS.findIndex(p=>p.id===o.active); setActive(i>=0?i:0); return; } }catch(e){} }
+      LOCAL_TS=o.ts||0; const i=PROJECTS.findIndex(p=>p.id===o.active); setActive(i>=0?i:0); return; } }catch(e){} }
   seedPortfolio(); setActive(0); save();
 }
 
@@ -2278,10 +2288,23 @@ async function handleSession(session){
 async function cloudInit(){
   syncStatus("syncing");
   try{
+    load();                       // always restore local data first (so a reload never blanks out)
     const {data,error}=await sb.from("kv").select("value").eq("key",SYNC_KEY).maybeSingle();
     if(error) throw error;
-    if(data&&data.value){ applyCloud(data.value,true); bootApp(); syncStatus("synced"); }
-    else { load(); bootApp(); await cloudSaveNow(); }   // migrate current local data to cloud
+    let applied=false;
+    if(data&&data.value){
+      try{
+        const o=JSON.parse(data.value); const payload=o.data||o; const cloudTs=o.ts||(payload&&payload.ts)||0;
+        const localHas=PROJECTS&&PROJECTS.length;
+        // use the cloud copy only if it actually has projects AND is newer than local (or local is empty)
+        if(payload.projects&&payload.projects.length && (!localHas || cloudTs>=LOCAL_TS)){
+          applyCloud(data.value,true); applied=true;
+        }
+      }catch(e){}
+    }
+    bootApp();
+    if(!applied) await cloudSaveNow();   // local is newer (or cloud empty) -> push local up to the cloud
+    syncStatus("synced");
     subscribeRealtime();
   }catch(e){ load(); bootApp(); syncStatus("error"); }
 }
