@@ -523,6 +523,7 @@
       <input id="fSearch" placeholder="🔍 Search task / owner…" style="min-width:240px"/>
       <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="fMs"/> milestones only</label>
       <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="fCp"/> critical path only</label>
+      <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="cpToggle" checked/> highlight critical path</label>
       <button class="btn" onclick="addRow()">➕ Add row</button>
       <button class="btn ghost" onclick="openWsManager()">🗂 Workstreams</button>
       <button class="btn ghost" onclick="openListsManager()">🏷 Lists</button>
@@ -792,6 +793,8 @@ const MONTHS_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","
 
 let PROJECTS = [], ACTIVE = 0, DATA = [], UID = 0, VIEW = "portfolio", REPORTTYPE = "project";
 let LOCAL_TS = 0;   // timestamp of the locally stored portfolio (for cloud merge by recency)
+let SHOW_CP = true;   // highlight the critical path in the Tasks table & Gantt
+try{ SHOW_CP = localStorage.getItem("ew_show_cp")!=="0"; }catch(e){}
 
 /* ---------- helpers ---------- */
 const pad = n => String(n).padStart(2,"0");
@@ -1511,6 +1514,9 @@ function rebuildWsFilter(){
 (function(){ const fs=document.getElementById("fStatus");
   fs.innerHTML=`<option value="">All statuses</option>`+[...STATUSES].sort(alpha).map(s=>`<option>${s}</option>`).join(""); })();
 ["fWs","fStatus","fPrio","fSearch","fMs","fCp"].forEach(id=>document.getElementById(id).addEventListener("input",renderTable));
+(function(){ const t=document.getElementById("cpToggle"); if(!t) return; t.checked=SHOW_CP;
+  t.addEventListener("change",()=>{ SHOW_CP=t.checked; try{ localStorage.setItem("ew_show_cp",SHOW_CP?"1":"0"); }catch(e){}
+    renderTable(); try{ buildGantt(); }catch(e){} }); })();
 
 /* ---------- column sorting (click a header to sort, click again to reverse) ---------- */
 let SORT={key:"",dir:1};
@@ -1550,7 +1556,7 @@ function currentRows(){
     &&(!q||(d.task+d.resp+d.desc+d.tid).toLowerCase().includes(q))));
 }
 function renderTable(){
-  const rows=currentRows(), cp=criticalPath(DATA).set;
+  const rows=currentRows(), cp=SHOW_CP?criticalPath(DATA).set:new Set();
   document.getElementById("tbody").innerHTML = rows.map(d=>`
     <tr class="${d.ms==="Yes"?"msrow":""} ${cp.has(normId(d.tid))?"critrow":""}" data-uid="${d.uid}">
       <td><select class="cell-input wsedit" data-field="ws">${wsOpt(d.ws)}</select></td>
@@ -2184,7 +2190,7 @@ function buildGantt(){
 
   let html=`<thead><tr><th class="gname">Workstream / Task</th>${months.map(m=>`<th class="gm">${mLbl(m)}</th>`).join("")}</tr></thead><tbody>`;
   const todayPct=((TODAY-g0)/span)*100;
-  const CP=criticalPath(DATA).set;
+  const CP=SHOW_CP?criticalPath(DATA).set:new Set();
 
   wsCodes(PROJECTS[ACTIVE]).forEach(([name,abbr])=>{
     html+=`<tr class="gws"><td class="gname">${name}</td><td class="gcell" colspan="${months.length}" style="position:relative">
@@ -2215,7 +2221,7 @@ function drawDeps(){
   if(mode==="off") return;
   if(!gantt.clientWidth) return;
   const bars={}; gantt.querySelectorAll("[data-tid]").forEach(el=>bars[el.dataset.tid]=el);
-  const cp=criticalPath(DATA).set;
+  const cp=SHOW_CP?criticalPath(DATA).set:new Set();
   const grect=gantt.getBoundingClientRect();
   const NS="http://www.w3.org/2000/svg";
   const svg=document.createElementNS(NS,"svg");
