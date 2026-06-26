@@ -383,6 +383,23 @@
     .kpi,.card,.pcard,.ms,.wsrow,tr,.rep-sec{break-inside:avoid}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
+  /* print column chooser */
+  #printArea{display:none}
+  .pchk-row{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:6px}
+  .pchk{font-size:13px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
+  .print-prev{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:46vh;margin-top:6px}
+  .print-prev table{width:100%;border-collapse:collapse;font-size:11px;min-width:0}
+  .print-prev th{position:sticky;top:0;background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:6px 8px;white-space:nowrap}
+  .print-prev td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  @media print{
+    body.print-custom > *{display:none!important}
+    body.print-custom > #printArea{display:block!important}
+    #printArea .print-head2{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--ew-magenta);padding-bottom:8px;margin-bottom:10px;font-size:12px;color:var(--ew-magenta-dark)}
+    #printArea table{width:100%;border-collapse:collapse;font-size:8.5px}
+    #printArea th{background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:4px 6px;border:1px solid #ddd}
+    #printArea td{padding:3px 6px;border:1px solid #ddd;vertical-align:top}
+    #printArea tr{break-inside:avoid}
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -446,7 +463,7 @@
     <div class="tab" data-tab="todo">✅ To-Do</div>
     <div class="tab" data-tab="report">📄 Report</div>
     <span style="flex:1"></span>
-    <button class="btn ghost" onclick="window.print()">🖨 Print this page / PDF</button>
+    <button class="btn ghost" onclick="printActive()">🖨 Print this page / PDF</button>
   </div>
 
   <!-- PORTFOLIO (home: all projects) -->
@@ -1551,6 +1568,85 @@ function renderTable(){
     </tr>`).join("");
   document.getElementById("rowcount").textContent = `${rows.length} of ${DATA.length} tasks shown`;
   updateSortArrows();
+}
+
+/* ---------- PRINT with column selection (Tasks) ---------- */
+const PRINT_COLS=[
+  {key:"ws",label:"Workstream",val:d=>wsName(d.ws)},
+  {key:"sub",label:"Sub-Workstream",val:d=>d.sub},
+  {key:"tid",label:"Task-ID",val:d=>d.tid},
+  {key:"task",label:"Task / Deliverable",val:d=>d.task},
+  {key:"desc",label:"Description",val:d=>d.desc},
+  {key:"resp",label:"Owner",val:d=>d.resp},
+  {key:"support",label:"Supporting depts",val:d=>d.support},
+  {key:"start",label:"Start",val:d=>de(d.start)},
+  {key:"due",label:"Due",val:d=>de(d.due)},
+  {key:"dur",label:"Duration",val:d=>d.dur},
+  {key:"prio",label:"Priority",val:d=>d.prio},
+  {key:"status",label:"Status",val:d=>d.status},
+  {key:"pct",label:"% Compl.",val:d=>d.pct},
+  {key:"ms",label:"Milestone",val:d=>d.ms},
+  {key:"deps",label:"Dependencies",val:d=>d.deps},
+  {key:"risk",label:"Risks / Issues",val:d=>d.risk},
+  {key:"format",label:"Format",val:d=>d.format||""},
+  {key:"revision",label:"Revision",val:d=>d.revision||""},
+  {key:"upd",label:"Last update",val:d=>de(d.upd)},
+  {key:"comment",label:"Comment",val:d=>d.comment},
+];
+let PRINT_SEL=null;
+function ensurePrintSel(){ if(!PRINT_SEL){ PRINT_SEL={}; PRINT_COLS.forEach(c=>PRINT_SEL[c.key]=true); } }
+function selectedPrintCols(){ ensurePrintSel(); return PRINT_COLS.filter(c=>PRINT_SEL[c.key]); }
+// Print button on the nav: on the Tasks tab show the column chooser, otherwise print the page directly
+function printActive(){ if(VIEW==="table") openPrintDialog(); else window.print(); }
+function buildPrintTableHTML(){
+  const cols=selectedPrintCols(); if(!cols.length) return `<div class="note" style="padding:10px">Select at least one column.</div>`;
+  const rows=currentRows();
+  const head=cols.map(c=>`<th>${h(c.label)}</th>`).join("");
+  const body=rows.map(d=>`<tr>${cols.map(c=>{const v=c.val(d); return `<td>${h(v==null?"":String(v))}</td>`;}).join("")}</tr>`).join("");
+  return `<table class="print-tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function renderPrintPreview(){ const el=document.getElementById("printPrev"); if(el) el.innerHTML=buildPrintTableHTML();
+  const n=document.getElementById("printCount"); if(n) n.textContent=currentRows().length+" rows"; }
+function printSelAll(v){ ensurePrintSel(); PRINT_COLS.forEach(c=>PRINT_SEL[c.key]=v);
+  document.querySelectorAll("#printModal input[data-pcol]").forEach(cb=>cb.checked=v); renderPrintPreview(); }
+function closePrintDialog(){ const m=document.getElementById("printModal"); if(m) m.style.display="none"; }
+function openPrintDialog(){
+  ensurePrintSel();
+  const checks=PRINT_COLS.map(c=>`<label class="pchk"><input type="checkbox" data-pcol="${c.key}" ${PRINT_SEL[c.key]?"checked":""}> ${h(c.label)}</label>`).join("");
+  const html=`<div class="imp-card" style="width:min(1100px,97vw);max-height:94vh;display:flex;flex-direction:column">
+    <div class="imp-head"><b>🖨 Print Tasks — choose columns</b><button class="iconbtn" onclick="closePrintDialog()">✕</button></div>
+    <div class="imp-body" style="overflow:auto;padding:14px 16px">
+      <div class="pchk-row">${checks}</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn ghost" onclick="printSelAll(true)">Select all</button>
+        <button class="btn ghost" onclick="printSelAll(false)">Clear all</button>
+        <span class="note">Live preview (<span id="printCount"></span>) — only the checked columns and the current filters/sort are printed.</span>
+      </div>
+      <div id="printPrev" class="print-prev"></div>
+    </div>
+    <div class="imp-foot">
+      <span class="note">Tip: choose <b>Landscape</b> in the print dialog for wide tables.</span>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="closePrintDialog()">Cancel</button>
+      <button class="btn" onclick="doCustomPrint()">🖨 Print / Save as PDF</button>
+    </div></div>`;
+  let m=document.getElementById("printModal");
+  if(!m){ m=document.createElement("div"); m.id="printModal"; m.className="imp-overlay"; document.body.appendChild(m);
+    m.addEventListener("change",e=>{ const k=e.target.dataset.pcol; if(k){ PRINT_SEL[k]=e.target.checked; renderPrintPreview(); } }); }
+  m.innerHTML=html; m.style.display="flex"; renderPrintPreview();
+}
+function doCustomPrint(){
+  const cols=selectedPrintCols(); if(!cols.length){ return; }
+  let pa=document.getElementById("printArea");
+  if(!pa){ pa=document.createElement("div"); pa.id="printArea"; document.body.appendChild(pa); }
+  const p=PROJECTS[ACTIVE];
+  pa.innerHTML=`<div class="print-head2"><div><b>Eurowings Project Management Cockpit · Trainings Department (TD)</b><div>${h(p?p.name:"")} · Tasks</div></div>`
+    +`<div style="text-align:right">As of ${de(TODAY_ISO)}<br>${currentRows().length} tasks</div></div>`+buildPrintTableHTML();
+  closePrintDialog();
+  document.body.classList.add("print-custom");
+  const cleanup=()=>{ document.body.classList.remove("print-custom"); window.removeEventListener("afterprint",cleanup); };
+  window.addEventListener("afterprint",cleanup);
+  setTimeout(()=>{ window.print(); },60);
 }
 
 /* ---------- CSV EXPORT ---------- */
