@@ -6,5 +6,5 @@
 //  (Der anon-Key ist für den Browser gedacht; die Daten sind über die
 //   Anmeldung + Zugriffsregeln in der Datenbank geschützt.)
 // ===========================================================================
-export const SUPABASE_URL = "https://jgrupdbfsxinahflzogr.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpncnVwZGJmc3hpbmFoZmx6b2dyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDEyODksImV4cCI6MjA5NzgxNzI4OX0.OwCkkiTC3QNCOJ2Kipa4lbwdJXf5TLZKE2tDsbBMTXI";
+export const SUPABASE_URL = "https://cfmngbcgrdveqbsdcavs.supabase.co";
+export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbW5nYmNncmR2ZXFic2RjYXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODY0MDQsImV4cCI6MjA5ODA2MjQwNH0.fRSoOnonGmyiR2lyN752kPE3q8DDbiGxn-u3j7pNPHI";
