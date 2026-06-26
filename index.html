@@ -940,12 +940,14 @@ async function saveNow(ev){
   } else { markSaved(); }
   if(btn){ const t=btn.innerHTML; btn.innerHTML=(okLocal||okCloud)?"✓ Saved":"⚠ Not saved"; btn.disabled=true; setTimeout(()=>{ btn.innerHTML=t; btn.disabled=false; },1400); }
 }
-function load(){
+// Read the locally stored portfolio WITHOUT seeding. Returns true if real data was found.
+function loadLocalRaw(){
   let s=null; try{ s=localStorage.getItem(KEY); }catch(e){}
   if(s){ try{ const o=JSON.parse(s); if(o&&o.projects&&o.projects.length){ PROJECTS=o.projects; PROJECTS.forEach(recomputeProject);
-      LOCAL_TS=o.ts||0; const i=PROJECTS.findIndex(p=>p.id===o.active); setActive(i>=0?i:0); return; } }catch(e){} }
-  seedPortfolio(); setActive(0); save();
+      LOCAL_TS=o.ts||0; const i=PROJECTS.findIndex(p=>p.id===o.active); setActive(i>=0?i:0); return true; } }catch(e){} }
+  return false;
 }
+function load(){ if(!loadLocalRaw()){ seedPortfolio(); setActive(0); save(); } }
 
 /* ---------- portfolio statistics ---------- */
 function projStats(p){
@@ -2509,25 +2511,27 @@ function withTimeout(thenable, ms){
 async function cloudInit(){
   syncStatus("syncing");
   try{
-    load();                       // always restore local data first (so a reload never blanks out)
+    const haveLocal=loadLocalRaw();   // read local WITHOUT seeding (LOCAL_TS stays 0 if there is none)
     const {data,error}=await withTimeout(sb.from("kv").select("value").eq("key",SYNC_KEY).maybeSingle(),12000);
     if(error) throw error;
     let applied=false;
     if(data&&data.value){
       try{
         const o=JSON.parse(data.value); const payload=o.data||o; const cloudTs=o.ts||(payload&&payload.ts)||0;
-        const localHas=PROJECTS&&PROJECTS.length;
-        // use the cloud copy only if it actually has projects AND is newer than local (or local is empty)
-        if(payload.projects&&payload.projects.length && (!localHas || cloudTs>=LOCAL_TS)){
+        // Prefer the cloud copy when there is no real local data, or when the cloud is newer.
+        if(payload.projects&&payload.projects.length && (!haveLocal || cloudTs>=LOCAL_TS)){
           applyCloud(data.value,true); applied=true;
         }
       }catch(e){}
     }
+    if(!applied && !haveLocal){ seedPortfolio(); setActive(0); }   // nothing locally and nothing usable in the cloud
     bootApp();
-    if(!applied) await cloudSaveNow();   // local is newer (or cloud empty) -> push local up to the cloud
-    syncStatus("synced");
+    // Only push up when we kept local data (local newer). NEVER overwrite the cloud with a freshly seeded blank.
+    if(!applied && haveLocal) await cloudSaveNow();
+    else if(!applied && !haveLocal) saveLocal();   // persist the new seed locally only
+    syncStatus(applied?"synced":(USER?"synced":"local"));
     subscribeRealtime();
-  }catch(e){ load(); bootApp(); syncStatus("error"); }
+  }catch(e){ if(!loadLocalRaw()){ seedPortfolio(); setActive(0); } bootApp(); syncStatus("error"); }
 }
 function applyCloud(valueStr, initial){
   try{
