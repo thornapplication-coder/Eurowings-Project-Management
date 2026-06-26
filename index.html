@@ -397,6 +397,7 @@
       <button class="btn" onclick="doSignIn()">Sign in</button>
       <button class="btn ghost" onclick="doSignUp()">Create account</button>
     </div>
+    <button class="auth-link" onclick="doForgot()">Forgot password?</button>
     <button class="auth-link" onclick="useOffline()">Continue offline on this device only</button>
     <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:2px">© Copyright by Patrick Thorn</div>
   </div>
@@ -2272,10 +2273,31 @@ function initSupabase(){
 async function startAuth(){
   if(!initSupabase()){ useOffline(true); return; }      // CDN/library unavailable -> offline mode
   try{
-    sb.auth.onAuthStateChange((event,session)=>handleSession(session));
+    sb.auth.onAuthStateChange((event,session)=>{ if(event==="PASSWORD_RECOVERY"){ promptNewPassword(); return; } handleSession(session); });
     const {data}=await sb.auth.getSession();
     handleSession(data&&data.session);
   }catch(e){ useOffline(true); }
+}
+// password reset: send a recovery email with a link back to this app
+async function doForgot(){
+  const email=$("authEmail").value.trim();
+  if(!email){ authMsg("Enter your email above first, then click 'Forgot password?'.",true); return; }
+  if(!sb && !initSupabase()){ authMsg("Cloud not available right now.",true); return; }
+  authMsg("Sending reset link…");
+  try{ const {error}=await withTimeout(sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split('#')[0]}),12000);
+    if(error) throw error;
+    authMsg("Reset link sent. Open the email at "+email+" and click the link to set a new password.");
+  }catch(e){ authMsg((e&&e.message)||"Could not send the reset link.",true); }
+}
+// after the user opens the recovery link, let them set a new password
+async function promptNewPassword(){
+  hideAuthGate();
+  const pw=prompt("Set a new password (at least 6 characters):","");
+  if(pw==null) return;
+  if(pw.length<6){ alert("Password must be at least 6 characters."); return promptNewPassword(); }
+  try{ const {error}=await withTimeout(sb.auth.updateUser({password:pw}),12000); if(error) throw error;
+    alert("Password updated — you are now signed in."); location.reload();
+  }catch(e){ alert("Could not update the password: "+((e&&e.message)||e)); }
 }
 function useOffline(silent){
   // Local-only mode (no cloud). The app still works fully on this device.
