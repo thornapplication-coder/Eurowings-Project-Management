@@ -288,6 +288,11 @@
   #nav .syncbadge.s-ok{background:#e3f6ec;color:var(--green)} #nav .syncbadge.s-syncing{background:var(--blue-soft);color:#0a7d9c}
   #nav .syncbadge.s-err{background:#fde7e7;color:var(--red)} #nav .syncbadge.s-off{background:#eef0f4;color:var(--muted)}
   .acct{font-size:12px;color:var(--muted)} .acct b{color:var(--ink)}
+  .hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .hdr-right .acct{font-size:12px;color:rgba(255,255,255,.9)} .hdr-right .acct b{color:#fff}
+  .hdr-right .hbtn{font:inherit;font-weight:700;font-size:13px;cursor:pointer;border-radius:8px;padding:7px 13px;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.15);color:#fff}
+  .hdr-right .hbtn.solid{background:#fff;color:var(--ew-magenta-dark);border-color:#fff}
+  .hdr-right .hbtn:hover{background:rgba(255,255,255,.28)} .hdr-right .hbtn.solid:hover{background:#f3e3ec}
   /* Import dialog */
   .imp-overlay{position:fixed;inset:0;background:rgba(20,25,40,.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
   .imp-card{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
@@ -411,6 +416,12 @@
     <div><span>As of</span><b>25 Jun 2026</b></div>
     <div><span>Target date</span><b><input type="date" data-pfield="eis" id="hdrEis"></b></div>
   </div>
+  <div class="hdr-right">
+    <span class="acct" id="acctInfo"></span>
+    <button class="hbtn solid" id="saveBtn" onclick="saveNow(event)" title="Save now to this device (and the cloud when signed in)">💾 Save</button>
+    <span id="syncBadge" class="syncbadge s-off" title="Sync status"></span>
+    <button class="hbtn" id="signOutBtn" style="display:none" onclick="doSignOut()">Sign out</button>
+  </div>
 </header>
 
 <div class="wrap">
@@ -432,8 +443,6 @@
     <div class="tab" data-tab="todo">✅ To-Do</div>
     <div class="tab" data-tab="report">📄 Report</div>
     <span style="flex:1"></span>
-    <button class="btn" id="saveBtn" onclick="saveNow(event)" title="Save now to this device (and the cloud when signed in)">💾 Save</button>
-    <span id="syncBadge" class="syncbadge s-off" title="Sync status"></span>
     <button class="btn ghost" onclick="window.print()">🖨 Print this page / PDF</button>
   </div>
 
@@ -452,9 +461,6 @@
       <button class="btn ghost" onclick="document.getElementById('importFile').click()">⤒ Restore</button>
       <button class="btn ghost" onclick="exportXLSXPortfolio()">⬇︎ Excel (all projects)</button>
       <button class="btn" onclick="document.getElementById('importXlsx').click()">📥 Import Excel/CSV</button>
-      <span style="flex:1"></span>
-      <span class="acct" id="acctInfo"></span>
-      <button class="btn ghost" id="signOutBtn" style="display:none" onclick="doSignOut()">Sign out</button>
     </div>
     <div class="note" style="margin:-6px 0 16px">Backup = save/transfer the whole portfolio · Import = bring existing Excel lists in as a project. When signed in, changes sync automatically across your devices.</div>
     <div class="kpis" id="portfolioKpis"></div>
