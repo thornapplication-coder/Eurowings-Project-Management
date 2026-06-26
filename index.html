@@ -512,7 +512,6 @@
       <button class="btn ghost" onclick="resetDemo()" title="Clear everything and start with one empty project">↺ Reset</button>
       <button class="btn ghost" onclick="exportXLSXProject(PROJECTS[ACTIVE])">⬇︎ Excel (.xlsx)</button>
       <button class="btn ghost" onclick="exportCSV()">⬇︎ CSV</button>
-      <button class="btn" onclick="window.print()">⬇︎ PDF / Print</button>
     </div>
     <div class="tablewrap">
       <table id="tbl">
@@ -985,7 +984,6 @@ function projectReportHTML(p){
   const cpDelayed=cp.order.filter(t=>cmap[t]&&cmap[t].status==="Overdue").length;
   return `
   <div class="rep-actions no-print">
-    <button class="btn" onclick="window.print()">🖨 Print as PDF</button>
     <button class="btn ghost" onclick="showReport('portfolio')">📄 Portfolio report</button>
     <span class="note">Tip: choose "Landscape" in the print dialog for more width.</span>
   </div>
@@ -1045,7 +1043,6 @@ function portfolioReportHTML(){
   const avg=PROJECTS.length?Math.round(agg.ov/PROJECTS.length):0;
   return `
   <div class="rep-actions no-print">
-    <button class="btn" onclick="window.print()">🖨 Print as PDF</button>
     <button class="btn ghost" onclick="showReport('project')">📄 Project report (${h(PROJECTS[ACTIVE].name)})</button>
   </div>
   <div class="report-doc">
