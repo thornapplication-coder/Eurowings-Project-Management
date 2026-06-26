@@ -189,6 +189,7 @@
   .pcard-tl{display:flex;gap:4px;padding:10px 16px 4px}
   .pcard-tl .d{height:8px;border-radius:4px;min-width:3px}
   .pcard-tl .d.g{background:var(--green)} .pcard-tl .d.b{background:var(--blue)} .pcard-tl .d.a{background:var(--amber)} .pcard-tl .d.r{background:var(--red)}
+  .pcompany{display:inline-block;margin-top:5px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#fff;padding:2px 8px;border-radius:20px}
   .pcard-act{display:flex;gap:8px;padding:8px 16px 16px;align-items:center}
   .pcard-act .btn{flex:1}
   .pcard-new{align-items:center;justify-content:center;border:2px dashed var(--line);box-shadow:none;color:var(--muted);cursor:pointer;min-height:240px;font-weight:600;gap:8px}
@@ -883,7 +884,7 @@ function seedPortfolio(){
   // Start empty: one blank project (the app requires at least one) with the
   // standard 10 workstreams. Rename it or add your own projects to begin.
   PROJECTS = [
-    {id:"p-start",name:"New project",fleet:"",lead:"",phase:"Planning",eis:"",ws:null,tasks:[]},
+    {id:"p-start",name:"New project",company:"EW",fleet:"",lead:"",phase:"Planning",eis:"",ws:null,tasks:[]},
   ];
   PROJECTS.forEach(recomputeProject);
   ACTIVE = 0;
@@ -994,6 +995,22 @@ function updateHeader(){
   document.getElementById("phProject").textContent = portfolioCtx ? "Portfolio · all projects" : (p.fleet+" · "+p.name);
   document.getElementById("phView").textContent = VIEWLBL[VIEW];
   document.getElementById("pfFoot").textContent = COPYRIGHT;
+  applyCompanyTheme(portfolioCtx ? "EW" : ((p&&p.company)||"EW"));
+}
+/* ---------- company branding (Eurowings / Aviation Academy Austria) ---------- */
+const COMPANIES={
+  EW:{ name:"Eurowings", logo:"EW", title:"Eurowings Project Management Cockpit", sub:"Trainings Department (TD)" },
+  AAA:{ name:"Aviation Academy Austria", logo:"AAA", title:"Aviation Academy Austria · PM Cockpit", sub:"Project Management",
+        theme:{ "--ew-magenta":"#3B4FA8","--ew-magenta-dark":"#2E3F86","--ew-magenta-deep":"#25336B","--ew-magenta-accent":"#5566C4","--ew-magenta-soft":"#ebedf8" } }
+};
+function companyOf(p){ return (p&&p.company==="AAA")?"AAA":"EW"; }
+function applyCompanyTheme(company){
+  const c=COMPANIES[company]||COMPANIES.EW, r=document.documentElement;
+  const allKeys=COMPANIES.AAA.theme;
+  for(const k in allKeys) r.style.removeProperty(k);                 // reset to Eurowings defaults
+  if(c.theme){ for(const k in c.theme) r.style.setProperty(k,c.theme[k]); }
+  const logo=document.querySelector("header .brand .logo"), title=document.getElementById("hdrTitle"), sub=document.querySelector("header .brand .sub");
+  if(logo) logo.textContent=c.logo; if(title) title.textContent=c.title; if(sub) sub.textContent=c.sub;
 }
 
 /* ---------- STATUS REPORT (1-Seiten-PDF) ---------- */
@@ -1221,7 +1238,7 @@ function loadDraft(){ const tpl=TEMPLATES.find(t=>t.id===NP_SEL)||TEMPLATES[0];
   NP_DRAFT={ ws:(tpl.ws||WS).map(w=>[w[0],w[1]]),
     tasks: tpl.tasks.map(r=>({ws:r[0],sub:r[1]||"",title:r[2],prio:r[3]||"Medium",ms:!!r[4],sw:r[5],dw:r[6],deps:r[7]||"-"})) }; }
 function npCapture(){ const g=id=>{ const e=document.getElementById(id); return e?e.value:undefined; };
-  NP_FORM={ name:g("npName"), fleet:g("npFleet"), lead:g("npLead"), target:g("npTarget") }; }
+  NP_FORM={ name:g("npName"), fleet:g("npFleet"), lead:g("npLead"), target:g("npTarget"), company:g("npCompany") }; }
 function selectTpl(id){ npCapture(); NP_SEL=id; delete NP_FORM.target; loadDraft(); renderNewProject(); }
 function closeNewProject(){ const m=document.getElementById("npModal"); if(m) m.style.display="none"; }
 // live edits from the draft tables write straight into NP_DRAFT (no re-render -> focus stays put)
@@ -1298,6 +1315,7 @@ function renderNewProject(){
       <p class="note" style="margin-top:0">Choose a template, then review &amp; edit its workstreams and tasks before creating. Dates are set relative to today; everything stays editable afterwards.</p>
       <div class="tpl-grid">${cards}</div>
       <div class="np-form">
+        <label>Company<select id="npCompany"><option value="EW" ${(NP_FORM.company||"EW")==="EW"?"selected":""}>Eurowings</option><option value="AAA" ${NP_FORM.company==="AAA"?"selected":""}>Aviation Academy Austria</option></select></label>
         <label>Project name<input id="npName" value="${h(nameVal)}"></label>
         <label>Fleet / type<input id="npFleet" value="${h(fleetVal)}" placeholder="e.g. new aircraft type"></label>
         <label>Project lead<input id="npLead" value="${h(leadVal)}"></label>
@@ -1321,7 +1339,8 @@ function createFromTpl(){
   const lead=(document.getElementById("npLead").value||"").trim()||"Chief Training Captain";
   const ws=cleanDraftWs(NP_DRAFT.ws);
   const target=document.getElementById("npTarget").value||draftTargetDate(NP_DRAFT);
-  const proj={ id:"p-"+Date.now(), name, fleet, lead, phase:"Planning", eis:target, ws, tasks:draftToTasks(NP_DRAFT,ws) };
+  const company=(document.getElementById("npCompany")&&document.getElementById("npCompany").value==="AAA")?"AAA":"EW";
+  const proj={ id:"p-"+Date.now(), name, company, fleet, lead, phase:"Planning", eis:target, ws, tasks:draftToTasks(NP_DRAFT,ws) };
   PROJECTS.push(proj); recomputeProject(proj);
   save(); closeNewProject(); openProject(PROJECTS.length-1);
 }
@@ -1343,6 +1362,8 @@ function editProject(i, delMode){
   const html=`<div class="imp-card" style="width:min(460px,96vw)">
     <div class="imp-head"><b>✎ Edit project</b><button class="iconbtn" onclick="closeProjEdit()">✕</button></div>
     <div class="imp-body" style="padding:14px 16px;overflow:auto">
+      <label class="pe-l">Company</label>
+      <select id="peCompany" class="pe-i"><option value="EW" ${companyOf(p)==="EW"?"selected":""}>Eurowings</option><option value="AAA" ${companyOf(p)==="AAA"?"selected":""}>Aviation Academy Austria</option></select>
       <label class="pe-l">Project name</label><input id="peName" class="pe-i" value="${h(p.name||"")}">
       <label class="pe-l">Fleet / type</label><input id="peFleet" class="pe-i" value="${h(p.fleet||"")}">
       <label class="pe-l">Project lead</label><input id="peLead" class="pe-i" value="${h(p.lead||"")}">
@@ -1363,9 +1384,10 @@ function editProject(i, delMode){
 function closeProjEdit(){ const m=document.getElementById("projEditModal"); if(m) m.style.display="none"; }
 function saveProjEdit(i){ const p=PROJECTS[i]; if(!p) return;
   const g=id=>{ const e=document.getElementById(id); return e?e.value:""; };
+  p.company=(g("peCompany")==="AAA")?"AAA":"EW";
   p.name=String(g("peName")).trim()||p.name; p.fleet=String(g("peFleet")).trim();
   p.lead=String(g("peLead")).trim(); p.phase=String(g("pePhase")).trim(); p.eis=g("peEis");
-  save(); rebuildProjSel(); renderPortfolio(); if(i===ACTIVE) updateHeader(); closeProjEdit(); markSaved();
+  save(); rebuildProjSel(); renderPortfolio(); updateHeader(); closeProjEdit(); markSaved();
 }
 function askDeleteProject(i){
   if(PROJECTS.length<=1){ const f=document.getElementById("peFoot"); if(f) f.innerHTML=`<span style="color:#c0392b;font-weight:700">At least one project must remain.</span><span style="flex:1"></span><button class="btn" onclick="closeProjEdit()">OK</button>`; return; }
@@ -1401,7 +1423,8 @@ function renderPortfolio(){
     const seg=(c,cls)=>c?`<span class="d ${cls}" style="flex:${c}"></span>`:"";
     return `<div class="pcard">
       <div class="pcard-top" style="--hc:${hc}">
-        <div><div class="pcard-fleet">${h(p.fleet)}</div><div class="pcard-name">${h(p.name)}</div></div>
+        <div><div class="pcard-fleet">${h(p.fleet)}</div><div class="pcard-name">${h(p.name)}</div>
+          <span class="pcompany" style="background:${companyOf(p)==="AAA"?"#3B4FA8":"#AF1E65"}">${h(COMPANIES[companyOf(p)].name)}</span></div>
         <span class="phealth" style="background:${hc}">${ht}</span></div>
       <div class="pcard-ring"><div class="pring" style="--p:${s.overall};--c:${hc}"><b>${s.overall}%</b></div>
         <div class="pcard-meta">
