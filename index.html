@@ -493,7 +493,7 @@
       <button class="btn ghost" onclick="openListsManager()">🏷 Lists</button>
       <span id="savedTag" class="saved" style="opacity:0">✓ saved</span>
       <span style="flex:1"></span>
-      <button class="btn ghost" onclick="resetDemo()" title="Discard all changes">↺ Demo</button>
+      <button class="btn ghost" onclick="resetDemo()" title="Clear everything and start with one empty project">↺ Reset</button>
       <button class="btn ghost" onclick="exportXLSXProject(PROJECTS[ACTIVE])">⬇︎ Excel (.xlsx)</button>
       <button class="btn ghost" onclick="exportCSV()">⬇︎ CSV</button>
       <button class="btn" onclick="window.print()">⬇︎ PDF / Print</button>
@@ -735,7 +735,7 @@ const WSNAME = Object.fromEntries(WS.map(w=>[w[1],w[0]]));
 const COLS = ["ws","sub","no","task","desc","resp","support","start","due","prio","status","pct","ms","deps","risk","upd","comment"];
 const TODAY = new Date("2026-06-25");
 const TODAY_ISO = "2026-06-25";
-const KEY = "ew_pm_portfolio_v1";
+const KEY = "ew_pm_portfolio_v2";
 const COPYRIGHT = "© Copyright by Patrick Thorn";
 // Full Eurowings status set. rag buckets: g=done · b=in progress · a=planned/hold · r=overdue · x=excluded(N/A)
 const STATUS_META = {
@@ -825,17 +825,12 @@ function recomputeProject(p){ ensureLists(p); p.tasks.forEach(d=>{ if(d.ms==="Ja
   d.tid=d.ws+"-"+pad(d.no); d.dur=days(d.start,d.due); autoStatus(d); }); }
 function recompute(){ recomputeProject(PROJECTS[ACTIVE]); }
 function seedPortfolio(){
+  // Start empty: one blank project (the app requires at least one) with the
+  // standard 10 workstreams. Rename it or add your own projects to begin.
   PROJECTS = [
-    {id:"p-typerating",name:"New Aircraft Type – Type Rating Program",fleet:"New Aircraft Type",lead:"Chief Training Captain",phase:"Execution",eis:"2027-06-15",tasks:mkTasks(T)},
-    {id:"p-a320neo",name:"Airbus A320neo – CEO→NEO Differences",fleet:"Airbus A320neo",lead:"Fleet Captain A320",phase:"Execution",eis:"2027-02-15",tasks:mkTasks(T_A320)},
-    {id:"p-e195e2",name:"Embraer E195-E2 – New Type Introduction",fleet:"Embraer E195-E2",lead:"Project Captain E2",phase:"Planning",eis:"2027-11-01",tasks:mkTasks(T_E2)},
+    {id:"p-start",name:"New project",fleet:"",lead:"",phase:"Planning",eis:"",ws:null,tasks:[]},
   ];
   PROJECTS.forEach(recomputeProject);
-  // a few demo to-dos so the To-Do tab shows how it works
-  const demo={ "OMD-3":["Draft syllabus outline","Align with OEB differences","Internal review with Standards"],
-    "SIM-2":["Finalise commercial terms","Confirm slot calendar","Legal sign-off"],
-    "INS-4":["Request Boeing slots","Nominate attendees","Prepare pre-reading"] };
-  PROJECTS[0].tasks.forEach(d=>{ const k=demo[normId(d.tid)]; if(k) d.todos=k.map((t,i)=>({id:"sd"+normId(d.tid)+i,text:t,done:i===0})); });
   ACTIVE = 0;
 }
 /* ---------- critical path ----------
@@ -2136,7 +2131,7 @@ function addRow(){
   const w=document.querySelector(".tablewrap"); if(w) w.scrollTop=w.scrollHeight;
 }
 function resetDemo(){
-  if(confirm("Reset the entire portfolio to demo data?\nAll projects & changes will be lost.")){
+  if(confirm("Clear the entire portfolio and start fresh?\nAll projects, tasks and to-dos will be permanently deleted (on this device and, if signed in, in the cloud).")){
     try{ localStorage.removeItem(KEY); }catch(e){} seedPortfolio(); setActive(0); save();
     rebuildProjSel(); rebuildAll(); showView("portfolio"); markSaved(); }
 }
