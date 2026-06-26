@@ -897,6 +897,10 @@ const normId = s => String(s==null?"":s).trim().replace(/-0*(\d)/,"-$1");
 function criticalPath(tasks){
   const map={}; tasks.forEach(t=>map[normId(t.tid)]=t);
   const depsOf = t => String(t.deps||"").split(",").map(s=>normId(s)).filter(x=>x&&x!=="-"&&map[x]);
+  // No critical path for a flat list: it only makes sense with milestones or dependencies
+  const anyMs = tasks.some(t=>t.ms==="Yes");
+  const anyDeps = tasks.some(t=>depsOf(t).length);
+  if(!anyMs && !anyDeps) return {set:new Set(), order:[], endTid:null, length:0};
   let end=null,endD=-Infinity;
   tasks.forEach(t=>{ if(t.ms==="Yes"){ const d=+new Date(t.due); if(d>endD){endD=d;end=normId(t.tid);} }});
   if(!end) tasks.forEach(t=>{ const d=+new Date(t.due); if(d>endD){endD=d;end=normId(t.tid);} });
