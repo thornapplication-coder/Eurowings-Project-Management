@@ -98,6 +98,10 @@
   table{border-collapse:collapse;width:100%;font-size:12px;min-width:1900px}
   thead th{position:sticky;top:0;background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:10px 10px;
     font-weight:600;font-size:11px;white-space:nowrap;z-index:5}
+  thead th[data-sort]{cursor:pointer;user-select:none}
+  thead th[data-sort]:hover{background:var(--ew-magenta)}
+  thead th .ar{font-size:9px;opacity:.95}
+  .todo-status{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 5px;background:#fff;cursor:pointer}
   tbody td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
   tbody tr:hover{background:var(--ew-magenta-soft)}
   tr.msrow{background:#fff8e6}
@@ -505,10 +509,10 @@
     <div class="tablewrap">
       <table id="tbl">
         <thead><tr>
-          <th>Workstream</th><th>Sub-Workstream</th><th>Task-ID</th><th>Task / Deliverable</th>
-          <th>Description</th><th>Owner</th><th>Supporting depts</th><th>Start</th>
-          <th>Due Date</th><th>Duration (days)</th><th>Priority</th><th>Status</th><th>% Compl.</th>
-          <th>Milestone</th><th>Dependencies</th><th>Risks / Issues</th><th>Format</th><th>Revision</th><th>Last update</th><th>Comment</th><th>Action</th>
+          <th data-sort="ws">Workstream<span class="ar"></span></th><th data-sort="sub">Sub-Workstream<span class="ar"></span></th><th data-sort="tid">Task-ID<span class="ar"></span></th><th data-sort="task">Task / Deliverable<span class="ar"></span></th>
+          <th data-sort="desc">Description<span class="ar"></span></th><th data-sort="resp">Owner<span class="ar"></span></th><th data-sort="support">Supporting depts<span class="ar"></span></th><th data-sort="start">Start<span class="ar"></span></th>
+          <th data-sort="due">Due Date<span class="ar"></span></th><th data-sort="dur">Duration (days)<span class="ar"></span></th><th data-sort="prio">Priority<span class="ar"></span></th><th data-sort="status">Status<span class="ar"></span></th><th data-sort="pct">% Compl.<span class="ar"></span></th>
+          <th data-sort="ms">Milestone<span class="ar"></span></th><th data-sort="deps">Dependencies<span class="ar"></span></th><th data-sort="risk">Risks / Issues<span class="ar"></span></th><th data-sort="format">Format<span class="ar"></span></th><th data-sort="revision">Revision<span class="ar"></span></th><th data-sort="upd">Last update<span class="ar"></span></th><th data-sort="comment">Comment<span class="ar"></span></th><th>Action</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -841,8 +845,9 @@ function autoStatus(d){
 function recomputeProject(p){ ensureLists(p); ensureSubs(p); p.tasks.forEach(d=>{ if(d.ms==="Ja")d.ms="Yes"; else if(d.ms==="Nein")d.ms="No";
   if(d.status==="Delayed") d.status="Overdue";     // migrate old status value
   if(!Array.isArray(d.todos)) d.todos=[]; if(d.format==null) d.format=""; if(d.revision==null) d.revision="";
+  d.todos.forEach(t=>{ if(!t.status) t.status = t.done?"Completed":"Not Started"; t.done = (t.status==="Completed"); });
   if(d.todos.length){ d.pct=Math.round(d.todos.filter(t=>t.done).length/d.todos.length*100); }   // % auto-derived from to-dos
-  d.tid=d.ws+"-"+pad(d.no); d.dur=days(d.start,d.due); autoStatus(d); }); }
+  d.tid=d.ws+"-"+pad(d.no); d.dur=(d.start&&d.due)?days(d.start,d.due):""; autoStatus(d); }); }
 function recompute(){ recomputeProject(PROJECTS[ACTIVE]); }
 function seedPortfolio(){
   // Start empty: one blank project (the app requires at least one) with the
@@ -1420,13 +1425,42 @@ function rebuildWsFilter(){
   fs.innerHTML=`<option value="">All statuses</option>`+[...STATUSES].sort(alpha).map(s=>`<option>${s}</option>`).join(""); })();
 ["fWs","fStatus","fPrio","fSearch","fMs","fCp"].forEach(id=>document.getElementById(id).addEventListener("input",renderTable));
 
+/* ---------- column sorting (click a header to sort, click again to reverse) ---------- */
+let SORT={key:"",dir:1};
+function cmpVal(d,k){
+  if(k==="ws") return wsName(d.ws)||"";
+  if(k==="dur") return d.dur===""||d.dur==null?Number.NEGATIVE_INFINITY:Number(d.dur);
+  if(k==="pct") return Number(d.pct)||0;
+  if(k==="prio") return PRIOS.indexOf(d.prio);
+  if(k==="status") return STATUSES.indexOf(d.status);
+  return d[k]==null?"":d[k];
+}
+function sortRows(rows){
+  if(!SORT.key) return rows;
+  const k=SORT.key, dir=SORT.dir, numeric=["dur","pct","prio","status"].includes(k);
+  return rows.slice().sort((a,b)=>{
+    let va=cmpVal(a,k), vb=cmpVal(b,k);
+    if(numeric) return (va-vb)*dir;
+    va=String(va); vb=String(vb);
+    if(va===""&&vb!=="") return 1; if(vb===""&&va!=="") return -1;   // empties always last
+    return va.localeCompare(vb,undefined,{numeric:true,sensitivity:"base"})*dir;
+  });
+}
+function updateSortArrows(){
+  document.querySelectorAll('#tbl thead th[data-sort]').forEach(th=>{ const ar=th.querySelector('.ar');
+    if(ar) ar.textContent = (th.dataset.sort===SORT.key) ? (SORT.dir>0?' ▲':' ▼') : ''; });
+}
+(function wireSort(){ const thead=document.querySelector('#tbl thead'); if(!thead) return;
+  thead.addEventListener('click',e=>{ const th=e.target.closest('th[data-sort]'); if(!th) return;
+    const k=th.dataset.sort; if(SORT.key===k) SORT.dir=-SORT.dir; else { SORT.key=k; SORT.dir=1; }
+    renderTable(); }); })();
 function currentRows(){
   const ws=fWs.value, st=document.getElementById("fStatus").value, pr=document.getElementById("fPrio").value;
   const q=document.getElementById("fSearch").value.toLowerCase(), onlyMs=document.getElementById("fMs").checked;
   const onlyCp=document.getElementById("fCp").checked, cp=onlyCp?criticalPath(DATA).set:null;
-  return DATA.filter(d=>(!ws||d.ws===ws)&&(!st||d.status===st)&&(!pr||d.prio===pr)
+  return sortRows(DATA.filter(d=>(!ws||d.ws===ws)&&(!st||d.status===st)&&(!pr||d.prio===pr)
     &&(!onlyMs||d.ms==="Yes")&&(!onlyCp||cp.has(normId(d.tid)))
-    &&(!q||(d.task+d.resp+d.desc+d.tid).toLowerCase().includes(q)));
+    &&(!q||(d.task+d.resp+d.desc+d.tid).toLowerCase().includes(q))));
 }
 function renderTable(){
   const rows=currentRows(), cp=criticalPath(DATA).set;
@@ -1458,6 +1492,7 @@ function renderTable(){
       <td><div class="rowact"><button class="iconbtn" data-act="dup" title="Duplicate">⧉</button><button class="iconbtn" data-act="del" title="Delete">✕</button></div></td>
     </tr>`).join("");
   document.getElementById("rowcount").textContent = `${rows.length} of ${DATA.length} tasks shown`;
+  updateSortArrows();
 }
 
 /* ---------- CSV EXPORT ---------- */
@@ -2040,6 +2075,7 @@ function drawDeps(){
 }
 
 /* ---------- TO-DO TAB (checklists per task / Gantt sub-item) ---------- */
+const TODO_STATUSES=["Not Started","In Progress","On Hold","Completed"];
 function buildTodos(){
   const wsF=document.getElementById("tdWs").value, q=document.getElementById("tdSearch").value.toLowerCase();
   const onlyOpen=document.getElementById("tdOpen").checked, hideEmpty=document.getElementById("tdHideEmpty").checked;
@@ -2061,7 +2097,7 @@ function buildTodos(){
           ${todos.length?`<span class="todo-count">${done}/${todos.length}</span><span class="todo-mini"><i style="width:${pct}%"></i></span>`
             :`<button class="iconbtn" data-act="expand" title="Add to-do">＋ to-do</button>`}</div>`;
       const itemsHtml = todos.length ? (shown.length?shown.map(({t,i})=>`<div class="todo-item ${t.done?'done':''}" data-ti="${i}">
-            <input type="checkbox" data-act="toggle" ${t.done?'checked':''}>
+            <select class="todo-status" data-act="status" title="Status">${TODO_STATUSES.map(s=>`<option ${t.status===s?'selected':''}>${s}</option>`).join("")}</select>
             <div class="todo-text" contenteditable data-act="edit">${h(t.text)}</div>
             <button class="iconbtn" data-act="del" title="Remove">✕</button></div>`).join("") : `<div class="todo-empty">All done 🎉</div>`) : "";
       const addBox=`<div class="todo-add" ${todos.length?"":'style="display:none"'}><input placeholder="Add a to-do and press Enter…" data-act="addinput">
@@ -2078,7 +2114,7 @@ function tdRerender(focusUid){ const y=window.scrollY; buildTodos(); window.scro
   if(focusUid){ const c=document.querySelector(`#todoList .todo-task[data-uid="${focusUid}"]`); const i=c&&c.querySelector("[data-act=addinput]"); if(i) i.focus(); } }
 function tdCommit(){ recompute(); save(); markSaved(); refreshStats(); }   // recompute() re-derives task % from to-dos
 function tdAdd(inp){ const card=inp.closest(".todo-task"), d=tdTask(card), text=inp.value.trim(); if(!d||!text) return;
-  if(!Array.isArray(d.todos)) d.todos=[]; d.todos.push({id:"td"+Date.now()+Math.floor(Math.random()*1e4),text,done:false});
+  if(!Array.isArray(d.todos)) d.todos=[]; d.todos.push({id:"td"+Date.now()+Math.floor(Math.random()*1e4),text,status:"Not Started",done:false});
   tdCommit(); tdRerender(d.uid); }
 // Jump from a Gantt task to its to-do checklist
 function openTaskTodos(uid){
@@ -2098,9 +2134,12 @@ function openTaskTodos(uid){
   // click a Gantt task row -> open its to-do list
   document.getElementById("gtbl").addEventListener("click",e=>{ const tr=e.target.closest("tr.gtask"); if(tr&&tr.dataset.uid) openTaskTodos(tr.dataset.uid); });
   const list=document.getElementById("todoList");
-  list.addEventListener("change",e=>{ if(e.target.dataset.act!=="toggle") return;
-    const card=e.target.closest(".todo-task"), d=tdTask(card), ti=+e.target.closest(".todo-item").dataset.ti;
-    if(d&&d.todos[ti]){ d.todos[ti].done=e.target.checked; tdCommit(); tdRerender(); } });
+  list.addEventListener("change",e=>{
+    const item=e.target.closest(".todo-item"); if(!item) return;
+    const card=e.target.closest(".todo-task"), d=tdTask(card), ti=+item.dataset.ti;
+    if(!d||!d.todos[ti]) return;
+    if(e.target.dataset.act==="status"){ d.todos[ti].status=e.target.value; d.todos[ti].done=(e.target.value==="Completed"); tdCommit(); tdRerender(); }
+    else if(e.target.dataset.act==="toggle"){ d.todos[ti].done=e.target.checked; d.todos[ti].status=e.target.checked?"Completed":"Not Started"; tdCommit(); tdRerender(); } });
   list.addEventListener("input",e=>{ if(e.target.dataset.act!=="edit") return;
     const card=e.target.closest(".todo-task"), d=tdTask(card), ti=+e.target.closest(".todo-item").dataset.ti;
     if(d&&d.todos[ti]){ d.todos[ti].text=e.target.textContent; markSaved(); saveDebounced(); } });
@@ -2162,11 +2201,12 @@ tbody.addEventListener("click", e=>{
 });
 
 function addRow(){
-  const ws=fWs.value||WS[0][1], t="2026-06-25";
-  DATA.push({uid:UID++,ws,sub:"–",no:nextNo(ws),task:"New task",desc:"",resp:"",support:"",
-    start:t,due:t,prio:"Medium",status:"Not Started",pct:0,ms:"No",deps:"-",risk:"-",upd:t,comment:""});
+  const ws=fWs.value||WS[0][1];
+  DATA.unshift({uid:UID++,ws,sub:"",no:nextNo(ws),task:"",desc:"",resp:"",support:"",
+    start:"",due:"",prio:"Medium",status:"Not Started",pct:0,ms:"No",deps:"",risk:"",upd:"",comment:"",format:"",revision:"",todos:[]});
+  SORT={key:"",dir:1};                 // clear sorting so the new empty row stays on top
   recompute(); save(); renderTable(); refreshStats(); markSaved();
-  const w=document.querySelector(".tablewrap"); if(w) w.scrollTop=w.scrollHeight;
+  const w=document.querySelector(".tablewrap"); if(w) w.scrollTop=0;
 }
 function resetDemo(){
   if(confirm("Clear the entire portfolio and start fresh?\nAll projects, tasks and to-dos will be permanently deleted (on this device and, if signed in, in the cloud).")){
