@@ -2285,11 +2285,16 @@ async function handleSession(session){
     if(!booted) showAuthGate();   // first load, not signed in
   }
 }
+// reject a hung Supabase call so the sync badge never sticks on "Syncing…" forever
+function withTimeout(thenable, ms){
+  return Promise.race([ Promise.resolve(thenable),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error("sync-timeout")),ms)) ]);
+}
 async function cloudInit(){
   syncStatus("syncing");
   try{
     load();                       // always restore local data first (so a reload never blanks out)
-    const {data,error}=await sb.from("kv").select("value").eq("key",SYNC_KEY).maybeSingle();
+    const {data,error}=await withTimeout(sb.from("kv").select("value").eq("key",SYNC_KEY).maybeSingle(),12000);
     if(error) throw error;
     let applied=false;
     if(data&&data.value){
@@ -2325,7 +2330,7 @@ function scheduleCloudSave(){ if(!sb||!USER||applyingRemote) return; syncStatus(
 async function cloudSaveNow(){
   if(!sb||!USER) return;
   const value=JSON.stringify({origin:CLIENT_ID,ts:Date.now(),data:{projects:PROJECTS,active:PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].id}});
-  try{ const {error}=await sb.from("kv").upsert({user_id:USER.id,key:SYNC_KEY,value,updated_at:new Date().toISOString()},{onConflict:"user_id,key"});
+  try{ const {error}=await withTimeout(sb.from("kv").upsert({user_id:USER.id,key:SYNC_KEY,value,updated_at:new Date().toISOString()},{onConflict:"user_id,key"}),12000);
     if(error) throw error; syncStatus("synced"); }
   catch(e){ syncStatus("error"); }
 }
