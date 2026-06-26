@@ -293,6 +293,8 @@
   .hdr-right .hbtn{font:inherit;font-weight:700;font-size:13px;cursor:pointer;border-radius:8px;padding:7px 13px;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.15);color:#fff}
   .hdr-right .hbtn.solid{background:#fff;color:var(--ew-magenta-dark);border-color:#fff}
   .hdr-right .hbtn:hover{background:rgba(255,255,255,.28)} .hdr-right .hbtn.solid:hover{background:#f3e3ec}
+  .pe-l{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 4px}
+  .pe-i{width:100%;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
   /* Import dialog */
   .imp-overlay{position:fixed;inset:0;background:rgba(20,25,40,.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
   .imp-card{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
@@ -1299,6 +1301,48 @@ function deleteProject(i){
   PROJECTS.splice(i,1); if(ACTIVE>=PROJECTS.length) ACTIVE=PROJECTS.length-1;
   setActive(ACTIVE); save(); rebuildProjSel(); rebuildAll(); renderPortfolio();
 }
+/* ---------- project edit / delete via an in-app modal (no native prompt/confirm) ---------- */
+function editProject(i, delMode){
+  const p=PROJECTS[i]; if(!p) return;
+  const html=`<div class="imp-card" style="width:min(460px,96vw)">
+    <div class="imp-head"><b>✎ Edit project</b><button class="iconbtn" onclick="closeProjEdit()">✕</button></div>
+    <div class="imp-body" style="padding:14px 16px;overflow:auto">
+      <label class="pe-l">Project name</label><input id="peName" class="pe-i" value="${h(p.name||"")}">
+      <label class="pe-l">Fleet / type</label><input id="peFleet" class="pe-i" value="${h(p.fleet||"")}">
+      <label class="pe-l">Project lead</label><input id="peLead" class="pe-i" value="${h(p.lead||"")}">
+      <label class="pe-l">Phase</label><input id="pePhase" class="pe-i" value="${h(p.phase||"")}">
+      <label class="pe-l">Target date</label><input id="peEis" type="date" class="pe-i" value="${p.eis||""}">
+    </div>
+    <div class="imp-foot" id="peFoot">
+      <button class="btn ghost" style="color:#c0392b;border-color:#c0392b" onclick="askDeleteProject(${i})">🗑 Delete project</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="closeProjEdit()">Cancel</button>
+      <button class="btn" onclick="saveProjEdit(${i})">Save</button>
+    </div></div>`;
+  let m=document.getElementById("projEditModal");
+  if(!m){ m=document.createElement("div"); m.id="projEditModal"; m.className="imp-overlay"; document.body.appendChild(m); }
+  m.innerHTML=html; m.style.display="flex";
+  if(delMode) askDeleteProject(i);
+}
+function closeProjEdit(){ const m=document.getElementById("projEditModal"); if(m) m.style.display="none"; }
+function saveProjEdit(i){ const p=PROJECTS[i]; if(!p) return;
+  const g=id=>{ const e=document.getElementById(id); return e?e.value:""; };
+  p.name=String(g("peName")).trim()||p.name; p.fleet=String(g("peFleet")).trim();
+  p.lead=String(g("peLead")).trim(); p.phase=String(g("pePhase")).trim(); p.eis=g("peEis");
+  save(); rebuildProjSel(); renderPortfolio(); if(i===ACTIVE) updateHeader(); closeProjEdit(); markSaved();
+}
+function askDeleteProject(i){
+  if(PROJECTS.length<=1){ const f=document.getElementById("peFoot"); if(f) f.innerHTML=`<span style="color:#c0392b;font-weight:700">At least one project must remain.</span><span style="flex:1"></span><button class="btn" onclick="closeProjEdit()">OK</button>`; return; }
+  const f=document.getElementById("peFoot"); if(!f) return;
+  f.innerHTML=`<span style="color:#c0392b;font-weight:700">Delete "${h(PROJECTS[i].name)}"?</span><span style="flex:1"></span>
+    <button class="btn ghost" onclick="editProject(${i})">No, keep</button>
+    <button class="btn" style="background:#c0392b" onclick="reallyDeleteProject(${i})">Yes, delete</button>`;
+}
+function reallyDeleteProject(i){
+  if(PROJECTS.length<=1){ closeProjEdit(); return; }
+  PROJECTS.splice(i,1); if(ACTIVE>=PROJECTS.length) ACTIVE=PROJECTS.length-1;
+  setActive(ACTIVE); save(); rebuildProjSel(); rebuildAll(); closeProjEdit(); renderPortfolio(); markSaved();
+}
 
 /* ---------- PORTFOLIO RENDER ---------- */
 function renderPortfolio(){
@@ -1336,8 +1380,8 @@ function renderPortfolio(){
       <div class="pbar"><i style="width:${s.overall}%;background:${hc}"></i></div>
       <div class="pcard-tl" title="Green ${s.g} · Blue ${s.b} · Yellow ${s.a} · Red ${s.r}">${seg(s.g,"g")}${seg(s.b,"b")}${seg(s.a,"a")}${seg(s.r,"r")}</div>
       <div class="pcard-act"><button class="btn" onclick="openProject(${i})">Open project →</button>
-        <button class="iconbtn" onclick="renameProject(${i})" title="Edit">✎</button>
-        <button class="iconbtn" onclick="deleteProject(${i})" title="Delete">✕</button></div>
+        <button class="iconbtn" onclick="editProject(${i})" title="Edit project">✎</button>
+        <button class="iconbtn" onclick="editProject(${i},true)" title="Delete project">✕</button></div>
     </div>`;
   }).join("") + `<div class="pcard pcard-new" onclick="newProject()"><div class="plus">＋</div><div>Create new project</div></div>`;
 }
