@@ -1,24 +1,2275 @@
 <!doctype html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#AF1E65" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="TO DO APP" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="icon" href="favicon.ico" />
-    <title>TO DO APP</title>
-    <style>
-      html, body { margin: 0; padding: 0; }
-      body { overflow-x: hidden; background: #F8F9FA; -webkit-text-size-adjust: 100%; }
-      #root { min-height: 100vh; }
-      * { box-sizing: border-box; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Eurowings Project Management Cockpit · Trainings Department (TD)</title>
+<style>
+  :root{
+    /* Eurowings brand palette (from corporate colour guide) */
+    --ew-magenta:#AF1E65;        /* Light Burgundy (primary) */
+    --ew-magenta-dark:#871C54;   /* Dark Burgundy */
+    --ew-magenta-deep:#701745;   /* Darker Burgundy */
+    --ew-magenta-accent:#D41370; /* Lighter Burgundy (accents/bars) */
+    --ew-magenta-soft:#f7e6ef;   /* soft burgundy tint */
+    --blue:#00A6CF;              /* Skyblue (secondary) */
+    --blue-light:#6BCCE0; --blue-soft:#E6F5F9;
+    --ink:#212529; --muted:#5f6469; --line:#e2e4e7; --bg:#F1F3F5; --card:#ffffff;
+    --grey:#787878;
+    --green:#1e9e63; --amber:#e8a317; --red:#d23b3b;
+    --shadow:0 1px 3px rgba(33,37,41,.08),0 6px 20px rgba(33,37,41,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+  /* Header */
+  header{background:linear-gradient(110deg,var(--ew-magenta),var(--ew-magenta-dark));color:#fff;
+    padding:18px 26px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:46px;height:46px;border-radius:11px;background:#fff;color:var(--ew-magenta);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:.5px;box-shadow:var(--shadow)}
+  .brand h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+  .brand .sub{font-size:12px;opacity:.9;margin-top:2px}
+  .meta{display:flex;gap:22px;flex-wrap:wrap;font-size:12px}
+  .meta div span{display:block;opacity:.8;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px}
+  .meta div b{font-size:13px;font-weight:600}
+  .wrap{max-width:1640px;margin:0 auto;padding:22px 26px 60px}
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin:0 0 18px;flex-wrap:wrap}
+  .tab{padding:9px 16px;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;
+    font-weight:600;color:var(--muted);font-size:13px}
+  .tab.active{background:var(--ew-magenta);color:#fff;border-color:var(--ew-magenta)}
+  .panel{display:none}
+  .panel.active{display:block}
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:20px}
+  @media(max-width:1200px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+  .kpi .val{font-size:30px;font-weight:800;margin-top:6px;line-height:1}
+  .kpi .foot{font-size:11.5px;color:var(--muted);margin-top:7px}
+  .kpi .bar{accent-color:var(--ew-magenta)}
+  .kpi.accent{background:linear-gradient(135deg,var(--ew-magenta),var(--ew-magenta-dark));color:#fff}
+  .kpi.accent .lbl,.kpi.accent .foot{color:rgba(255,255,255,.85)}
+  .ring{--p:0;width:64px;height:64px;border-radius:50%;
+    background:conic-gradient(#fff calc(var(--p)*1%),rgba(255,255,255,.25) 0);
+    display:flex;align-items:center;justify-content:center;position:absolute;right:14px;top:14px}
+  .ring::before{content:"";position:absolute;width:48px;height:48px;border-radius:50%;background:var(--ew-magenta-dark)}
+  .ring b{position:relative;font-size:14px;font-weight:800}
+  /* Generic cards */
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:20px}
+  @media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 14px;font-size:14px;display:flex;align-items:center;gap:8px}
+  .card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--ew-magenta)}
+  /* Workstream progress */
+  .wsrow{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+  .wsrow .name{width:230px;font-size:12.5px;font-weight:600;flex-shrink:0}
+  .wsrow .track{flex:1;height:14px;background:#eef1f6;border-radius:8px;overflow:hidden}
+  .wsrow .fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--ew-magenta),#D41370)}
+  .wsrow .pct{width:42px;text-align:right;font-size:12px;font-weight:700;color:var(--muted)}
+  /* Traffic light */
+  .traffic{display:flex;gap:14px;flex-wrap:wrap}
+  .tl{flex:1;min-width:120px;border-radius:12px;padding:14px;color:#fff;text-align:center}
+  .tl b{font-size:26px;display:block;font-weight:800}
+  .tl span{font-size:11.5px;opacity:.95}
+  .tl.g{background:var(--green)} .tl.a{background:var(--amber)} .tl.r{background:var(--red)} .tl.b{background:var(--grey)}
+  /* Milestones */
+  .ms{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .ms:last-child{border-bottom:0}
+  .ms .ico{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+  .ms .mtxt{flex:1}
+  .ms .mtxt b{font-size:13px}
+  .ms .mtxt small{display:block;color:var(--muted);font-size:11.5px}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  /* Table */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar select,.toolbar input{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff}
+  .btn{padding:9px 15px;border:1px solid var(--ew-magenta);background:var(--ew-magenta);color:#fff;border-radius:9px;
+    font-weight:600;cursor:pointer;font-size:13px}
+  .btn.ghost{background:#fff;color:var(--ew-magenta)}
+  .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);max-height:74vh}
+  table{border-collapse:collapse;width:100%;font-size:12px;min-width:1900px}
+  thead th{position:sticky;top:0;background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:10px 10px;
+    font-weight:600;font-size:11px;white-space:nowrap;z-index:5}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tbody tr:hover{background:var(--ew-magenta-soft)}
+  tr.msrow{background:#fff8e6}
+  tr.msrow:hover{background:#fff2cf}
+  td.tid{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--ew-magenta-dark);white-space:nowrap}
+  .wschip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--ew-magenta-soft);color:var(--ew-magenta-dark);white-space:nowrap}
+  .pill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-block}
+  .s-comp{background:#e3f6ec;color:var(--green)} .s-prog{background:var(--blue-soft);color:#0a7d9c}
+  .s-not{background:#eef0f4;color:var(--muted)} .s-del{background:#fde7e7;color:var(--red)}
+  .s-rev{background:#efe7fb;color:#6b3fa0} .s-hold{background:#fff3da;color:#b9810b} .s-na{background:#eef0f4;color:#9aa3b1}
+  .p-high{background:#fde7e7;color:var(--red)} .p-med{background:#fff3da;color:#b9810b} .p-low{background:#eef0f4;color:var(--muted)}
+  .mini{height:7px;background:#eef1f6;border-radius:5px;overflow:hidden;min-width:60px}
+  .mini i{display:block;height:100%;background:var(--ew-magenta)}
+  .ynyes{color:var(--ew-magenta);font-weight:800}
+  .nowrap{white-space:nowrap}
+  td.tk{min-width:220px;font-weight:600}
+  td.desc{min-width:260px;color:var(--muted)}
+  .risk{color:var(--red)}
+  /* Gantt */
+  .gantt{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);max-height:78vh}
+  .gtable{border-collapse:collapse;min-width:1500px;width:100%;font-size:11.5px}
+  .gtable th.gm{background:var(--ew-magenta-dark);color:#fff;padding:7px 6px;font-size:10.5px;text-align:center;border-left:1px solid rgba(255,255,255,.15);position:sticky;top:0;z-index:4}
+  .gtable th.gname{background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:7px 10px;position:sticky;left:0;top:0;z-index:6;min-width:240px}
+  .gtable td.gname{position:sticky;left:0;background:#fff;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line);z-index:2;min-width:240px}
+  .gtable td.gcell{border-left:1px solid #eef1f6;border-bottom:1px solid var(--line);padding:0;height:30px;position:relative}
+  .gbar{position:absolute;top:6px;height:16px;border-radius:5px;left:2%;right:2%;
+    background:linear-gradient(90deg,var(--ew-magenta),#D41370);box-shadow:var(--shadow)}
+  .gbar.done{background:linear-gradient(90deg,var(--green),#46c285)}
+  .gbar.delay{background:linear-gradient(90deg,var(--red),#ef6b6b)}
+  .gbar.ms{background:transparent;box-shadow:none}
+  .gdiamond{position:absolute;top:4px;left:50%;transform:translateX(-50%) rotate(45deg);width:16px;height:16px;background:var(--amber);border:2px solid #fff;box-shadow:var(--shadow)}
+  .gtable tr.gws td{background:var(--ew-magenta-soft);font-weight:700;color:var(--ew-magenta-dark)}
+  .today{position:absolute;top:0;bottom:0;width:2px;background:var(--blue);z-index:3}
+  .leg{display:flex;gap:18px;flex-wrap:wrap;margin:12px 2px;font-size:11.5px;color:var(--muted)}
+  .leg span{display:inline-flex;align-items:center;gap:6px}
+  .leg i{width:16px;height:10px;border-radius:3px;display:inline-block}
+  .note{font-size:11.5px;color:var(--muted);margin-top:6px}
+  footer{text-align:center;color:var(--muted);font-size:11.5px;padding:24px}
+  .pillbar{display:flex;gap:6px;align-items:center}
+  /* Editable cells */
+  .ce{min-height:18px;outline:none;border-radius:6px;padding:2px 4px;min-width:60px}
+  td.tk .ce,td.desc .ce{min-width:200px}
+  .ce:focus{background:#fff;box-shadow:inset 0 0 0 2px var(--ew-magenta-soft)}
+  td:hover .ce{background:#fbfbfd}
+  .cell-input{border:1px solid transparent;background:transparent;font:inherit;color:inherit;padding:3px 5px;border-radius:7px;max-width:100%}
+  .cell-input:focus{outline:none;border-color:var(--ew-magenta);background:#fff;box-shadow:0 0 0 2px var(--ew-magenta-soft)}
+  select.cell-input{cursor:pointer;-webkit-appearance:none;appearance:none;padding-right:18px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 3l3 3 3-3' stroke='%23999' fill='none' stroke-width='1.4'/></svg>");
+    background-repeat:no-repeat;background-position:right 5px center}
+  select.mgsel{min-width:118px;max-width:210px;text-overflow:ellipsis;border:1px solid transparent}
+  td:hover select.mgsel{border-color:var(--line)}
+  select.cell-input.pill{font-weight:700;border:none}
+  select.cell-input.pill:focus{box-shadow:0 0 0 2px rgba(0,0,0,.12)}
+  select.wsedit{max-width:165px;font-size:11px;font-weight:600;color:var(--ew-magenta-dark);background-color:var(--ew-magenta-soft);border-radius:6px}
+  .cell-date{min-width:120px;font-size:11.5px}
+  .cell-num{width:54px;text-align:center;font-weight:700}
+  .pct-auto{display:inline-block;width:54px;text-align:center;color:var(--ew-magenta-dark);font-weight:700;font-size:11px;cursor:help}
+  .rowact{display:flex;gap:4px}
+  .iconbtn{border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;padding:3px 7px;font-size:12px;line-height:1.3;color:var(--muted)}
+  .iconbtn:hover{background:var(--ew-magenta-soft);border-color:var(--ew-magenta);color:var(--ew-magenta-dark)}
+  .saved{font-size:11.5px;color:var(--green);font-weight:700;transition:opacity .4s}
+  /* Portfolio */
+  .portfolio-head h2{margin:0;font-size:21px}
+  .portfolio-head p{margin:3px 0 16px;color:var(--muted);font-size:13px}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .pcard-top{display:flex;justify-content:space-between;gap:10px;padding:15px 16px 12px;border-top:4px solid var(--hc)}
+  .pcard-fleet{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700}
+  .pcard-name{font-size:15.5px;font-weight:700;margin-top:2px;line-height:1.25}
+  .phealth{height:fit-content;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .pcard-ring{display:flex;gap:14px;align-items:center;padding:2px 16px 12px}
+  .pring{--p:0;--c:var(--ew-magenta);width:60px;height:60px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(var(--c) calc(var(--p)*1%),#eef1f6 0);display:flex;align-items:center;justify-content:center;position:relative}
+  .pring::before{content:"";position:absolute;width:44px;height:44px;border-radius:50%;background:#fff}
+  .pring b{position:relative;font-size:14px;font-weight:800}
+  .pcard-meta{flex:1;display:flex;flex-direction:column;gap:3px}
+  .pcard-meta div{display:flex;justify-content:space-between;font-size:11.5px;gap:8px}
+  .pcard-meta span{color:var(--muted)} .pcard-meta b{font-weight:600;text-align:right}
+  .pcard-stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:#fafbfc}
+  .pcard-stats div{padding:9px 4px;text-align:center;border-right:1px solid var(--line)}
+  .pcard-stats div:last-child{border-right:0}
+  .pcard-stats b{display:block;font-size:18px;font-weight:800}
+  .pcard-stats span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .pbar{height:6px;background:#eef1f6} .pbar i{display:block;height:100%}
+  .pcard-tl{display:flex;gap:4px;padding:10px 16px 4px}
+  .pcard-tl .d{height:8px;border-radius:4px;min-width:3px}
+  .pcard-tl .d.g{background:var(--green)} .pcard-tl .d.b{background:var(--blue)} .pcard-tl .d.a{background:var(--amber)} .pcard-tl .d.r{background:var(--red)}
+  .pcard-act{display:flex;gap:8px;padding:8px 16px 16px;align-items:center}
+  .pcard-act .btn{flex:1}
+  .pcard-new{align-items:center;justify-content:center;border:2px dashed var(--line);box-shadow:none;color:var(--muted);cursor:pointer;min-height:240px;font-weight:600;gap:8px}
+  .pcard-new:hover{border-color:var(--ew-magenta);color:var(--ew-magenta)}
+  .pcard-new .plus{font-size:34px;line-height:1}
+  .navsel{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;font-weight:600;color:var(--ew-magenta-dark);max-width:280px}
+  .hdr-edit{outline:none;border-radius:6px;padding:1px 4px;border:1px solid transparent}
+  .hdr-edit:hover{border-color:rgba(255,255,255,.35)}
+  .hdr-edit:focus{box-shadow:0 0 0 2px rgba(255,255,255,.5);background:rgba(255,255,255,.14)}
+  .meta input[type=date]{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:12px;padding:2px 5px}
+  /* Critical path & dependencies */
+  #gantt .gantt{position:relative}
+  tr.critrow td.tid{box-shadow:inset 3px 0 0 var(--red)}
+  .critflag{color:var(--red);font-weight:800;margin-right:2px;cursor:help}
+  .gbar.crit{outline:2px solid #d23b3b;outline-offset:1px}
+  .gdiamond.crit{border-color:var(--red);box-shadow:0 0 0 2px rgba(210,59,59,.45)}
+  .cpchain{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .cpchip{background:#fde7e7;color:#b32a2a;border:1px solid #f3b4b4;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap}
+  .cparrow{color:var(--red);font-weight:800;font-size:12px}
+  .depsvg{position:absolute;top:0;left:0;pointer-events:none;z-index:3}
+  /* Status report */
+  .rep-actions{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .report-doc{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;max-width:1120px;margin:0 auto}
+  .rep-band{background:linear-gradient(110deg,var(--ew-magenta),var(--ew-magenta-dark));color:#fff;padding:15px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .rep-band .rb-l{display:flex;align-items:center;gap:12px}
+  .rep-band h2{margin:0;font-size:17px}
+  .rep-band .rb-sub{font-size:11.5px;opacity:.9;margin-top:2px}
+  .rep-band .rb-r{text-align:right;font-size:11.5px;opacity:.95;line-height:1.5}
+  .rep-band .rb-r b{font-size:15px}
+  .rep-pad{padding:18px 22px}
+  .rep-summary{display:flex;gap:18px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:16px}
+  .rep-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;flex:1}
+  .rep-kv .b{background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+  .rep-kv .b span{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;display:block;margin-bottom:2px}
+  .rep-kv .b b{font-size:18px;font-weight:800}
+  .rep-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:780px){.rep-cols{grid-template-columns:1fr}}
+  .rep-sec h4{margin:0 0 9px;font-size:12.5px;color:var(--ew-magenta-dark);border-bottom:2px solid var(--ew-magenta-soft);padding-bottom:5px}
+  .repws{display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:6px}
+  .repws span{width:150px;flex-shrink:0}
+  .rtrack{flex:1;height:9px;background:#eef1f6;border-radius:5px;overflow:hidden}
+  .rtrack i{display:block;height:100%;background:linear-gradient(90deg,var(--ew-magenta),#D41370)}
+  .repws b{width:34px;text-align:right;color:var(--muted)}
+  .rep-ms{font-size:11px;display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .rdot{width:18px;height:18px;border-radius:50%;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+  .rep-risk{font-size:11px;display:flex;gap:8px;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+  .rdate{color:var(--muted);font-size:10.5px;white-space:nowrap}
+  .rep-table{width:100%;min-width:0;border-collapse:collapse;font-size:11px}
+  .rep-table th{background:var(--ew-magenta-dark);color:#fff;text-align:left;padding:6px 8px;font-size:10px;white-space:nowrap}
+  .rep-table td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  /* To-Do tab */
+  .todo-ws{margin-bottom:18px}
+  .todo-ws-head{font-size:13px;font-weight:700;color:var(--ew-magenta-dark);padding:8px 2px;border-bottom:2px solid var(--ew-magenta-soft);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .todo-ws-head .c{font-size:11.5px;font-weight:600;color:var(--muted)}
+  .todo-task{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .todo-task.compact{padding:7px 14px;margin-bottom:7px}
+  .todo-task.compact .todo-task-head{margin-bottom:0}
+  .iconbtn[data-act=expand]{font-weight:600;color:var(--ew-magenta-dark)}
+  .todo-task.flash{animation:tdflash 1.6s ease}
+  @keyframes tdflash{0%,40%{box-shadow:0 0 0 3px var(--ew-magenta);background:var(--ew-magenta-soft)}100%{box-shadow:var(--shadow);background:#fff}}
+  /* Gantt task rows are clickable -> open to-dos */
+  .gtable tr.gtask{cursor:pointer}
+  .gtable tr.gtask:hover td.gname{background:var(--ew-magenta-soft)}
+  .gtable tr.gtask td.gname::after{content:"✅";opacity:0;margin-left:6px;font-size:10px}
+  .gtable tr.gtask:hover td.gname::after{opacity:.7}
+  .todo-task-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .todo-task-head .tid{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--ew-magenta-dark);font-size:12px}
+  .todo-task-head .tt{font-weight:600;flex:1;min-width:140px}
+  .todo-count{font-size:11.5px;color:var(--muted);white-space:nowrap;font-weight:600}
+  .todo-mini{width:64px;height:6px;background:#eef1f6;border-radius:4px;overflow:hidden}
+  .todo-mini i{display:block;height:100%;background:var(--green)}
+  .todo-item{display:flex;align-items:center;gap:9px;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .todo-item:last-of-type{border-bottom:0}
+  .todo-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+  .todo-text{flex:1;outline:none;font-size:13px;padding:3px 5px;border-radius:6px;min-height:18px}
+  .todo-text:focus{background:var(--ew-magenta-soft)}
+  .todo-item.done .todo-text{text-decoration:line-through;color:var(--muted)}
+  .todo-add{display:flex;gap:8px;margin-top:9px}
+  .todo-add input{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .todo-add input:focus{outline:none;border-color:var(--ew-magenta);box-shadow:0 0 0 2px var(--ew-magenta-soft)}
+  .todo-empty{color:var(--muted);font-size:12.5px;font-style:italic;padding:3px 0}
+  /* Auth gate */
+  .auth-overlay{position:fixed;inset:0;background:linear-gradient(135deg,var(--ew-magenta),var(--ew-magenta-dark));display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+  .auth-card{background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.35);width:min(380px,94vw);padding:24px;display:flex;flex-direction:column;gap:12px}
+  .auth-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .auth-head b{font-size:15px;color:var(--ink)} .auth-head span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .auth-card input{padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+  .auth-card input:focus{outline:none;border-color:var(--ew-magenta);box-shadow:0 0 0 3px var(--ew-magenta-soft)}
+  .auth-actions{display:flex;gap:10px} .auth-actions .btn{flex:1;justify-content:center;text-align:center}
+  .auth-msg{font-size:12.5px;color:var(--muted);min-height:16px}
+  .auth-link{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:4px}
+  .auth-link:hover{color:var(--ew-magenta)}
+  .syncbadge{font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);color:#fff}
+  .syncbadge.s-ok{background:rgba(30,158,99,.22)} .syncbadge.s-syncing{background:rgba(255,255,255,.22)}
+  .syncbadge.s-err{background:rgba(210,59,59,.25)} .syncbadge.s-off{background:rgba(255,255,255,.14)}
+  #nav .syncbadge{background:#eef1f6;color:var(--muted)}
+  #nav .syncbadge.s-ok{background:#e3f6ec;color:var(--green)} #nav .syncbadge.s-syncing{background:var(--blue-soft);color:#0a7d9c}
+  #nav .syncbadge.s-err{background:#fde7e7;color:var(--red)} #nav .syncbadge.s-off{background:#eef0f4;color:var(--muted)}
+  .acct{font-size:12px;color:var(--muted)} .acct b{color:var(--ink)}
+  /* Import dialog */
+  .imp-overlay{position:fixed;inset:0;background:rgba(20,25,40,.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+  .imp-card{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+  .imp-head{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;background:linear-gradient(110deg,var(--ew-magenta),var(--ew-magenta-dark));color:#fff;font-size:15px}
+  .imp-head .iconbtn{background:rgba(255,255,255,.15);border-color:transparent;color:#fff}
+  .imp-body{padding:16px 18px;overflow:auto}
+  .imp-row{margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .imp-row select,.imp-row input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .imp-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+  @media(max-width:760px){.imp-grid{grid-template-columns:1fr}}
+  .imp-map{width:100%;min-width:0;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+  .imp-map th{text-align:left;color:var(--muted);font-size:11px;padding:4px 6px;border-bottom:1px solid var(--line);background:#fff;position:static}
+  .imp-map td{padding:4px 6px;border-bottom:1px solid var(--line)}
+  .imp-map td:first-child,.imp-map th:first-child{width:44%;font-weight:600}
+  .imp-map select{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;background:#fff}
+  /* New-project template chooser */
+  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:10px;margin:10px 0 16px}
+  .tpl-card{border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;cursor:pointer;transition:border-color .12s,box-shadow .12s;background:#fff}
+  .tpl-card:hover{border-color:var(--ew-magenta-soft);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .tpl-card.sel{border-color:var(--ew-magenta);box-shadow:0 0 0 2px var(--ew-magenta-soft)}
+  .tpl-ico{font-size:22px;line-height:1;margin-bottom:6px}
+  .tpl-name{font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:3px}
+  .tpl-desc{font-size:11.5px;color:var(--muted);line-height:1.45;margin-bottom:8px}
+  .tpl-meta{font-size:10.5px;color:var(--ew-magenta-dark);font-weight:600}
+  .np-form{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+  @media(max-width:560px){.np-form{grid-template-columns:1fr}}
+  .np-form label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px;font-weight:600}
+  .np-form input{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+  .np-form input:focus{outline:none;border-color:var(--ew-magenta);box-shadow:0 0 0 2px var(--ew-magenta-soft)}
+  .np-toggle{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-weight:600;font-size:12.5px;color:var(--ew-magenta-dark);background:var(--ew-magenta-soft);border:1px solid transparent;padding:9px 13px;border-radius:9px;margin-top:14px}
+  .np-toggle:hover{border-color:var(--ew-magenta)}
+  .np-edit{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+  .np-edit h4{margin:2px 0 6px;font-size:12.5px;color:var(--ew-magenta-dark)}
+  .np-scroll{overflow-x:auto}
+  .np-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+  .np-tbl.np-min{min-width:780px}
+  .np-tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;padding:3px 5px;border-bottom:1px solid var(--line);white-space:nowrap;background:#fff;position:static}
+  .np-tbl td{padding:2px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .np-tbl input,.np-tbl select{font:inherit;font-size:11.5px;padding:4px 5px;border:1px solid var(--line);border-radius:6px;width:100%;box-sizing:border-box;background:#fff}
+  .np-tbl input:focus,.np-tbl select:focus{outline:none;border-color:var(--ew-magenta)}
+  .np-tbl input.num{width:54px}
+  .imp-prev h4{margin:0 0 8px;font-size:12.5px;color:var(--ew-magenta-dark)}
+  .imp-prev .rep-table{min-width:0;font-size:11px}
+  .imp-foot{display:flex;gap:10px;align-items:center;padding:12px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+  /* Touch scrolling for iPad */
+  .tablewrap,.gantt,#nav{-webkit-overflow-scrolling:touch}
+  /* iPad / kleinere Laptops */
+  @media(max-width:1024px){
+    .wrap{padding:16px 14px 48px}
+    header{padding:14px 16px}
+    .brand h1{font-size:16px}
+    .meta{gap:14px;font-size:11.5px}
+    #nav{overflow-x:auto;flex-wrap:nowrap}
+    #nav .tab,#nav .btn,#nav .navsel{flex:0 0 auto}
+    .toolbar .btn{padding:8px 12px}
+  }
+  @media(max-width:820px){ .rep-cols{grid-template-columns:1fr} }
+  /* Print-only branding */
+  .print-header,.print-footer{display:none}
+  @media print{
+    @page{margin:12mm}
+    body{background:#fff}
+    header,#nav,.toolbar,#screenFooter{display:none!important}
+    .print-header{display:flex!important;align-items:center;justify-content:space-between;
+      border-bottom:3px solid var(--ew-magenta);padding-bottom:10px;margin-bottom:16px}
+    .print-header .logo{width:42px;height:42px;background:var(--ew-magenta);color:#fff}
+    .print-header .ph-t b{font-size:15px;color:var(--ew-magenta-dark)}
+    .print-header .ph-t span{display:block;font-size:12px;color:#333;margin-top:1px}
+    .print-header .ph-r{text-align:right}
+    .print-header .ph-r b{font-size:14px;color:var(--ew-magenta-dark)}
+    .print-header .ph-r span{display:block;font-size:11px;color:#666}
+    .print-footer{display:block!important;position:fixed;bottom:0;left:0;right:0;
+      border-top:1px solid #ccc;padding-top:5px;font-size:9.5px;color:#666;text-align:center}
+    .wrap{max-width:none;padding:0}
+    .panel{display:none!important} .panel.active{display:block!important}
+    .rowact,td:last-child,th:last-child{display:none!important}
+    .tablewrap,.gantt{max-height:none;overflow:visible;border:none;box-shadow:none}
+    table{min-width:0;font-size:8.5px} .gtable{min-width:0;font-size:8px}
+    thead th{position:static}
+    .pgrid{grid-template-columns:repeat(2,1fr)}
+    .depsvg{display:none!important}
+    .no-print{display:none!important}
+    .rep-band{display:none!important}
+    .report-doc{box-shadow:none;border:none;max-width:none}
+    .rep-pad{padding:0}
+    .kpi,.card,.pcard,.ms,.wsrow,tr,.rep-sec{break-inside:avoid}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<!-- Login gate (cloud sync) -->
+<div id="authGate" class="auth-overlay" style="display:none">
+  <div class="auth-card">
+    <div class="auth-head"><div class="logo">EW</div>
+      <div><b>Eurowings Project Management Cockpit</b><span>Trainings Department (TD) · sign in to sync across your devices</span></div></div>
+    <input id="authEmail" type="email" autocomplete="username" placeholder="Email" />
+    <input id="authPw" type="password" autocomplete="current-password" placeholder="Password" />
+    <div id="authMsg" class="auth-msg"></div>
+    <div class="auth-actions">
+      <button class="btn" onclick="doSignIn()">Sign in</button>
+      <button class="btn ghost" onclick="doSignUp()">Create account</button>
+    </div>
+    <button class="auth-link" onclick="useOffline()">Continue offline on this device only</button>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:2px">© Copyright by Patrick Thorn</div>
+  </div>
+</div>
+<header>
+  <div class="brand">
+    <div class="logo">EW</div>
+    <div>
+      <h1 id="hdrTitle">Eurowings Project Management Cockpit</h1>
+      <div class="sub">Trainings Department (TD)</div>
+    </div>
+  </div>
+  <div class="meta" id="hdrMeta" style="display:none">
+    <div><span>Project</span><b class="hdr-edit" contenteditable data-pfield="name" id="hdrProj"></b></div>
+    <div><span>Project Lead</span><b class="hdr-edit" contenteditable data-pfield="lead" id="hdrLead"></b></div>
+    <div><span>Phase</span><b class="hdr-edit" contenteditable data-pfield="phase" id="hdrPhase"></b></div>
+    <div><span>As of</span><b>25 Jun 2026</b></div>
+    <div><span>Target date</span><b><input type="date" data-pfield="eis" id="hdrEis"></b></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Branded header shown only when printing / exporting PDF -->
+  <div class="print-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo">EW</div>
+      <div class="ph-t"><b>Eurowings Project Management Cockpit · Trainings Department (TD)</b><span id="phProject"></span></div>
+    </div>
+    <div class="ph-r"><b id="phView"></b><span>As of 25 Jun 2026 · Chief Training Captain</span></div>
+  </div>
+
+  <div class="tabs" id="nav">
+    <div class="tab" data-tab="portfolio">🗂 Portfolio</div>
+    <select id="projSel" class="navsel" title="Switch project"></select>
+    <div class="tab" data-tab="dash">📊 Dashboard</div>
+    <div class="tab" data-tab="table">📋 Tasks</div>
+    <div class="tab" data-tab="gantt">📅 Gantt</div>
+    <div class="tab" data-tab="todo">✅ To-Do</div>
+    <div class="tab" data-tab="report">📄 Report</div>
+    <span style="flex:1"></span>
+    <span id="syncBadge" class="syncbadge s-off" title="Sync status"></span>
+    <button class="btn ghost" onclick="window.print()">🖨 Print this page / PDF</button>
+  </div>
+
+  <!-- PORTFOLIO (home: all projects) -->
+  <section class="panel active" id="portfolio">
+    <div class="portfolio-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+      <div>
+        <h2>Training Portfolio</h2>
+        <p>All projects at a glance · each project is managed independently</p>
+      </div>
+      <button class="btn" style="white-space:nowrap" onclick="showReport('portfolio')">📄 Portfolio status report</button>
+    </div>
+    <div class="toolbar" style="margin-bottom:16px">
+      <span style="font-size:12.5px;color:var(--muted);font-weight:600">Data:</span>
+      <button class="btn ghost" onclick="exportBackup()">⤓ Backup (JSON)</button>
+      <button class="btn ghost" onclick="document.getElementById('importFile').click()">⤒ Restore</button>
+      <button class="btn ghost" onclick="exportXLSXPortfolio()">⬇︎ Excel (all projects)</button>
+      <button class="btn" onclick="document.getElementById('importXlsx').click()">📥 Import Excel/CSV</button>
+      <span style="flex:1"></span>
+      <span class="acct" id="acctInfo"></span>
+      <button class="btn ghost" id="signOutBtn" style="display:none" onclick="doSignOut()">Sign out</button>
+    </div>
+    <div class="note" style="margin:-6px 0 16px">Backup = save/transfer the whole portfolio · Import = bring existing Excel lists in as a project. When signed in, changes sync automatically across your devices.</div>
+    <div class="kpis" id="portfolioKpis"></div>
+    <div class="pgrid" id="portfolioGrid"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="panel" id="dash">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot"></span>Progress by workstream</h3>
+        <div id="wsProgress"></div>
+      </div>
+      <div class="card">
+        <h3><span class="dot"></span>Status overview (RAG)</h3>
+        <div class="traffic" id="traffic"></div>
+        <div class="note">Colours reflect task status: Green = Completed, Blue = In Progress, Yellow = Not Started (planned), Red = Overdue / critical.</div>
+      </div>
+    </div>
+    <div class="card" id="cpCard"></div>
+    <div class="card">
+      <h3><span class="dot"></span>Workload per person</h3>
+      <div id="workload"></div>
+    </div>
+    <div class="card">
+      <h3><span class="dot"></span>Milestone tracking</h3>
+      <div id="milestones"></div>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="panel" id="table">
+    <div class="toolbar">
+      <select id="fWs"><option value="">All workstreams</option></select>
+      <select id="fStatus">
+        <option value="">All statuses</option>
+      </select>
+      <select id="fPrio"><option value="">All priorities</option><option>High</option><option>Low</option><option>Medium</option></select>
+      <input id="fSearch" placeholder="🔍 Search task / owner…" style="min-width:240px"/>
+      <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="fMs"/> milestones only</label>
+      <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="fCp"/> critical path only</label>
+      <button class="btn" onclick="addRow()">➕ Add row</button>
+      <button class="btn ghost" onclick="openWsManager()">🗂 Workstreams</button>
+      <button class="btn ghost" onclick="openListsManager()">🏷 Lists</button>
+      <span id="savedTag" class="saved" style="opacity:0">✓ saved</span>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="resetDemo()" title="Discard all changes">↺ Demo</button>
+      <button class="btn ghost" onclick="exportXLSXProject(PROJECTS[ACTIVE])">⬇︎ Excel (.xlsx)</button>
+      <button class="btn ghost" onclick="exportCSV()">⬇︎ CSV</button>
+      <button class="btn" onclick="window.print()">⬇︎ PDF / Print</button>
+    </div>
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead><tr>
+          <th>Workstream</th><th>Sub-Workstream</th><th>Task-ID</th><th>Task / Deliverable</th>
+          <th>Description</th><th>Owner</th><th>Supporting depts</th><th>Start</th>
+          <th>Due Date</th><th>Duration (days)</th><th>Priority</th><th>Status</th><th>% Compl.</th>
+          <th>Milestone</th><th>Dependencies</th><th>Risks / Issues</th><th>Format</th><th>Revision</th><th>Last update</th><th>Comment</th><th>Action</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="note" id="rowcount"></div>
+  </section>
+
+  <!-- GANTT -->
+  <section class="panel" id="gantt">
+    <div class="leg">
+      <span><i style="background:linear-gradient(90deg,var(--ew-magenta),#D41370)"></i> Task (ongoing/planned)</span>
+      <span><i style="background:linear-gradient(90deg,var(--green),#46c285)"></i> Completed</span>
+      <span><i style="background:linear-gradient(90deg,var(--red),#ef6b6b)"></i> Overdue</span>
+      <span><i style="transform:rotate(45deg);background:var(--amber);width:12px;height:12px"></i> Milestone</span>
+      <span><i style="background:var(--blue);width:3px;height:14px"></i> Today (25 Jun 2026)</span>
+      <span><i style="outline:2px solid #d23b3b;background:transparent;width:14px;height:8px"></i> Critical path</span>
+      <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center">Dependency arrows:
+        <select id="depMode" class="navsel" style="padding:4px 8px;max-width:170px">
+          <option value="crit">Critical path only</option><option value="all">All</option><option value="off">Off</option>
+        </select></span>
+    </div>
+    <div class="gantt"><table class="gtable" id="gtbl"></table></div>
+    <div class="note">Simplified monthly timeline. Bar length & position derived from start/due dates. In the final app: zoomable (day/week/month) with dependency arrows.</div>
+  </section>
+
+  <!-- TO-DO (checklists per task / sub-item) -->
+  <section class="panel" id="todo">
+    <div class="toolbar">
+      <select id="tdWs"><option value="">All workstreams</option></select>
+      <input id="tdSearch" placeholder="🔍 Search task…" style="min-width:220px"/>
+      <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="tdOpen"/> open to-dos only</label>
+      <label style="font-size:12.5px;color:var(--muted)"><input type="checkbox" id="tdHideEmpty"/> hide tasks without to-dos</label>
+      <span style="flex:1"></span>
+      <span id="tdSummary" class="note" style="margin:0"></span>
+    </div>
+    <div id="todoList"></div>
+  </section>
+
+  <!-- STATUS REPORT (one-page PDF) -->
+  <section class="panel" id="report"></section>
+
+  <footer id="screenFooter"><b>© Copyright by Patrick Thorn</b></footer>
+  <div class="print-footer" id="pfFoot"></div>
+</div>
+<input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importBackup(this)"/>
+<input type="file" id="importXlsx" accept=".xlsx,.xls,.csv" style="display:none" onchange="startImport(this)"/>
+
+<script>
+/* ---------- WORKSTREAM-DEFINITION ---------- */
+const WS = [
+  ["Regulatory & Authority Approvals","REG"],
+  ["OM-D","OMD"],
+  ["OM-D Annex","OMDA"],
+  ["Instructor Training","INS"],
+  ["Examiner Training","EXM"],
+  ["Training Devices & Simulator","SIM"],
+  ["Training Material Development","TMD"],
+  ["Documentation & Manuals","DOC"],
+  ["3rd Parties & Boeing Coordination","BOE"],
+  ["Entry Into Service (EIS)","EIS"],
+];
+
+/* compact task tuples:
+   [ws, sub, taskNo, task, desc, resp, support, start, due, prio, status, pct, milestone, deps, risk, updated, comment] */
+const T = [
+/* === 1 Regulatory & Authority Approvals === */
+["REG","Concept Approval",1,"Training Concept Submission – New Type","Prepare & submit the type-rating training concept to the authority (LBA/EASA).","Chief Training Captain","Compliance, Flight Ops","2026-01-08","2026-02-20","High","Completed",100,"No","-","Early authority alignment required","2026-02-20","Basis for MS1"],
+["REG","Concept Approval",2,"Authority Kick-off Meeting","Kick-off meeting with the authority to align the approval path.","Regulatory Compliance Manager","Flight Ops","2026-01-12","2026-01-19","High","Completed",100,"No","REG-1","-","2026-01-19","Went well"],
+["REG","Approval Path",3,"Gap Analysis EASA Part-FCL / Part-ORA","Compare existing ATO approval against new type requirements.","Regulatory Compliance Manager","Quality, Compliance","2026-02-02","2026-03-13","High","Completed",100,"No","REG-1","-","2026-03-13","No critical gaps"],
+["REG","Approval Path",4,"ATO Extension Application – New Type","Formal application to extend the ATO to the new type.","Regulatory Compliance Manager","Quality","2026-03-16","2026-04-30","High","In Progress",70,"No","REG-3","Authority processing time unclear","2026-06-18","Queries open"],
+["REG","OEB/Diff",5,"OEB Report Review & Differences","Review Operational Evaluation Board report and derive differences training.","Chief Training Captain","Boeing Liaison, Standards","2026-02-23","2026-04-10","High","Completed",100,"No","REG-1","-","2026-04-10","Diff to legacy type defined"],
+["REG","Approval Path",6,"Create Compliance Checklist","Compliance demonstration matrix against authority requirements.","Quality Manager","Compliance","2026-04-13","2026-05-29","High","In Progress",55,"No","REG-3","-","2026-06-20","ongoing"],
+["REG","Authority Audit",7,"Prepare Authority Audit (ATO)","Document & process preparation for the authority audit.","Quality Manager","Training, Compliance","2026-05-04","2026-07-10","High","In Progress",35,"No","REG-4,REG-6","Audit date depends on the authority","2026-06-22","Date being agreed"],
+["REG","Authority Audit",8,"Conduct Authority Audit","On-site authority audit incl. findings handling.","Regulatory Compliance Manager","Quality, Training","2026-07-13","2026-08-21","High","Not Started",0,"No","REG-7","Findings could delay the schedule","2026-06-22","-"],
+["REG","Final Approval",9,"Authority Approval Received","Formal approval of the new type training programme by the authority.","Chief Training Captain","Compliance","2026-08-24","2026-09-04","High","Not Started",0,"Yes","REG-8","Critical path – blocks TR courses","2026-06-22","MS2"],
+["REG","Reporting",10,"Regulatory Status Reporting (ongoing)","Monthly compliance/approval status reporting to programme management.","Regulatory Compliance Manager","Quality","2026-02-02","2027-06-15","Medium","In Progress",40,"No","REG-1","-","2026-06-15","Monthly cycle"],
+["REG","Final Approval",11,"OPS Spec / AOC Update – New Type","Update Operations Specifications / AOC for the new type.","Regulatory Compliance Manager","Flight Ops, Compliance","2026-09-07","2026-10-09","High","Not Started",0,"No","REG-9","-","2026-06-22","-"],
+
+/* === 2 OM-D === */
+["OMD","Structure",1,"OM-D Gap Analysis (legacy → new type)","Analyse OM-D adaptation needs for the new-type training chapters.","OM-D Author","Standards, Flight Ops","2026-02-02","2026-03-06","High","Completed",100,"No","-","-","2026-03-06","completed"],
+["OMD","Structure",2,"Define OM-D Chapter Structure","Define the OM-D new type outline / chapter structure.","Standards Manager","OM-D Author","2026-03-09","2026-03-27","Medium","Completed",100,"No","OMD-1","-","2026-03-27","-"],
+["OMD","Content",3,"OM-D Type Rating Syllabus","Develop the type-rating syllabus in the OM-D.","Chief Training Captain","Standards, OM-D Author","2026-03-30","2026-05-15","High","In Progress",65,"No","OMD-2,REG-5","Depends on OEB differences","2026-06-19","Draft in review"],
+["OMD","Content",4,"OM-D Differences/Familiarisation Training","Chapter on differences/familiarisation training legacy ↔ new type.","Standards Manager","OM-D Author","2026-04-13","2026-05-29","High","In Progress",50,"No","REG-5","-","2026-06-19","-"],
+["OMD","Content",5,"OM-D Recurrent & Refresher Concept","Recurrent training & refresher requirements for new type.","OM-D Author","Standards","2026-05-04","2026-06-19","Medium","In Progress",40,"No","OMD-3","-","2026-06-20","-"],
+["OMD","Content",6,"OM-D LOFT / Scenario Based Training","Line Oriented Flight Training & scenario-based units.","Standards Manager","Training","2026-05-18","2026-07-03","Medium","Not Started",0,"No","OMD-3","-","2026-06-20","-"],
+["OMD","Content",7,"OM-D Checking & Assessment Standards","Checking and assessment standards (EBT/competencies) in the OM-D.","Chief Training Captain","Standards, Examiner Lead","2026-05-25","2026-07-17","High","Not Started",0,"No","OMD-3","-","2026-06-20","-"],
+["OMD","Review",8,"OM-D Internal Review Cycle","Internal quality & subject-matter review round of the OM-D.","Quality Manager","Standards, Flight Ops","2026-07-06","2026-08-07","High","Not Started",0,"No","OMD-3,OMD-4,OMD-7","-","2026-06-20","-"],
+["OMD","Approval",9,"OM-D Submission to Authority","Submit the OM-D for authority acceptance.","Regulatory Compliance Manager","Quality","2026-08-10","2026-08-28","High","Not Started",0,"No","OMD-8","On the critical approval path","2026-06-20","-"],
+["OMD","Approval",10,"OM-D Authority Acceptance & Release","Acceptance/release of the OM-D by the authority.","Chief Training Captain","Compliance","2026-08-31","2026-09-18","High","Not Started",0,"No","OMD-9","-","2026-06-20","-"],
+["OMD","Maintenance",11,"OM-D Revision Control & Distribution","Revision management & distribution of OM-D approved states.","OM-D Author","IT, Documentation","2026-09-21","2027-06-15","Low","Not Started",0,"No","OMD-10","-","2026-06-20","-"],
+
+/* === 3 OM-D Annex === */
+["OMDA","Planning",1,"Define Annex Overview & Needs","Define the required OM-D annexes (forms, records, briefings) for new type.","Standards Manager","OM-D Author","2026-03-02","2026-03-20","Medium","Completed",100,"No","OMD-2","-","2026-03-20","-"],
+["OMDA","Forms",2,"Annex Training Records / Forms","Training records, assessment forms & record templates for new type.","OM-D Author","Crew Training, IT","2026-03-23","2026-05-08","Medium","In Progress",60,"No","OMDA-1","-","2026-06-17","-"],
+["OMDA","Briefings",3,"Annex Briefing Guides","Standard briefing guides for sim & flight sessions.","Standards Manager","Training","2026-04-06","2026-05-22","Medium","In Progress",45,"No","OMDA-1","-","2026-06-17","-"],
+["OMDA","Checklists",4,"Annex Instructor Checklists","Checklists & guides for instructors (TRI/SFI).","TRI Lead","Standards","2026-04-20","2026-06-05","Medium","In Progress",30,"No","OMDA-1","-","2026-06-19","-"],
+["OMDA","Grading",5,"Annex Competency Grading Scheme","Competency-based grading scheme (annex to the OM-D checking chapter).","Examiner Lead (TRE)","Standards","2026-05-04","2026-06-19","High","Not Started",0,"No","OMD-7","-","2026-06-19","-"],
+["OMDA","Forms",6,"Annex Pre-Course Joining Instructions","Participant info pack & joining instructions for new type courses.","Crew Training Coordinator","HR, Crew Planning","2026-05-11","2026-06-26","Low","Not Started",0,"No","OMDA-2","-","2026-06-19","-"],
+["OMDA","Records",7,"Annex Record-Keeping Requirements","Requirements for audit-proof training documentation.","Quality Manager","IT, Documentation","2026-05-18","2026-07-03","Medium","Not Started",0,"No","OMDA-2","-","2026-06-19","-"],
+["OMDA","Review",8,"Annex Consolidation & Review","Consolidate & review all annexes.","OM-D Author","Quality, Standards","2026-07-06","2026-08-07","Medium","Not Started",0,"No","OMDA-2,OMDA-3,OMDA-4,OMDA-5","-","2026-06-19","-"],
+["OMDA","Approval",9,"Annex Release with OM-D","Release the annexes together with OM-D acceptance.","Chief Training Captain","Compliance","2026-08-10","2026-09-18","Medium","Not Started",0,"No","OMDA-8,OMD-10","-","2026-06-19","-"],
+["OMDA","Distribution",10,"Annex Distribution & EFB Integration","Provide the annexes/forms in EFB & training systems.","IT Coordinator","Documentation","2026-09-21","2026-10-23","Low","Not Started",0,"No","OMDA-9","-","2026-06-19","-"],
+
+/* === 4 Instructor Training === */
+["INS","Planning",1,"TRI/SFI Demand Planning – New Type","Determine the number of instructors (TRI/SFI) required for EIS.","Chief Training Captain","Crew Planning, HR","2026-02-09","2026-03-13","High","Completed",100,"No","-","-","2026-03-13","12 TRI / 6 SFI needed"],
+["INS","Selection",2,"Instructor Nomination & Selection","Select & nominate the instructor candidates.","Head of Training","Crew Planning","2026-03-16","2026-04-17","High","Completed",100,"No","INS-1","-","2026-04-17","Candidates confirmed"],
+["INS","Curriculum",3,"Instructor Course Syllabus (Type Diff)","Syllabus for the instructor differences course for the new type.","Standards Manager","Chief Training Captain","2026-04-06","2026-05-22","High","In Progress",60,"No","REG-5,OMD-3","-","2026-06-20","-"],
+["INS","Boeing",4,"Boeing Instructor Familiarisation","Boeing-side instructor familiarisation / train-the-trainer.","Boeing Liaison","Training","2026-05-11","2026-06-12","High","In Progress",25,"No","BOE-3","Boeing slots limited","2026-06-20","Dates at Boeing"],
+["INS","Ground",5,"Instructor Ground/Technical Training","Technical type training of the instructors (systems/CBT).","TRI Lead","Training Dev","2026-06-15","2026-07-17","High","Not Started",0,"No","INS-3,TMD-3","-","2026-06-20","-"],
+["INS","Simulator",6,"Instructor Simulator Training","FFS training of the instructors on the new type simulator.","TRI Lead","Simulator Manager","2026-07-20","2026-08-21","High","Not Started",0,"No","INS-5,SIM-7","Depends on sim availability","2026-06-20","critical path"],
+["INS","Standardisation",7,"Instructor Standardisation Meeting","Standardisation workshop for consistent training delivery.","Standards Manager","TRI Lead","2026-08-24","2026-09-04","Medium","Not Started",0,"No","INS-6","-","2026-06-20","-"],
+["INS","Qualification",8,"TRI/SFI Skill Test / Assessment","Instructor assessment of competence by TRE/authority.","Examiner Lead (TRE)","Compliance","2026-09-07","2026-09-25","High","Not Started",0,"No","INS-6,EXM-7","-","2026-06-20","-"],
+["INS","Milestone",9,"First Instructor Course Completed","Completion of the first full instructor course new type.","Chief Training Captain","Training","2026-09-28","2026-10-02","High","Not Started",0,"Yes","INS-8","-","2026-06-20","MS3"],
+["INS","Records",10,"Instructor Authorisations & Records","Issue instructor authorisations & record keeping.","Crew Training Coordinator","Quality, HR","2026-10-05","2026-10-23","Medium","Not Started",0,"No","INS-9","-","2026-06-20","-"],
+["INS","Recurrent",11,"Instructor Continuation Concept","Concept for ongoing standardisation/continuation of instructors.","Standards Manager","Training","2026-10-12","2026-11-13","Low","Not Started",0,"No","INS-9","-","2026-06-20","-"],
+
+/* === 5 Examiner Training === */
+["EXM","Planning",1,"TRE Demand & Authorisation Concept","Clarify Type Rating Examiner demand & authority authorisation.","Chief Training Captain","Compliance, Crew Planning","2026-03-02","2026-04-03","High","Completed",100,"No","-","-","2026-04-03","4 TRE needed"],
+["EXM","Selection",2,"TRE Nomination & Authority Application","Nominate TRE candidates & apply to the authority.","Head of Training","Compliance","2026-04-06","2026-05-08","High","In Progress",55,"No","EXM-1","Authority authorisation time-critical","2026-06-18","-"],
+["EXM","Curriculum",3,"Examiner Course Syllabus (Type)","Syllabus for TRE differences/standardisation new type.","Standards Manager","Chief Training Captain","2026-04-20","2026-06-05","High","In Progress",40,"No","REG-5,OMD-7","-","2026-06-20","-"],
+["EXM","Standardisation",4,"Examiner Standardisation Material","Standardisation material & assessment calibration.","Examiner Lead (TRE)","Standards","2026-05-18","2026-07-03","Medium","Not Started",0,"No","EXM-3,OMDA-5","-","2026-06-20","-"],
+["EXM","Ground",5,"Examiner Technical/Systems Update","Technical update of examiners on new type systems.","TRI Lead","Training Dev","2026-07-06","2026-08-07","High","Not Started",0,"No","EXM-3,TMD-3","-","2026-06-20","-"],
+["EXM","Simulator",6,"Examiner Simulator Standardisation","Sim standardisation & checking calibration of the TRE.","Examiner Lead (TRE)","Simulator Manager","2026-08-10","2026-09-04","High","Not Started",0,"No","EXM-5,SIM-7","Sim availability","2026-06-20","-"],
+["EXM","Qualification",7,"TRE Assessment of Competence","Assessment of competence of the examiners (authority/senior TRE).","Regulatory Compliance Manager","Compliance","2026-09-07","2026-09-25","High","Not Started",0,"No","EXM-6","-","2026-06-20","-"],
+["EXM","Milestone",8,"First Examiner Course Completed","Completion of the first examiner course new type.","Chief Training Captain","Training","2026-09-28","2026-10-02","High","Not Started",0,"Yes","EXM-7","-","2026-06-20","MS4"],
+["EXM","Records",9,"Examiner Authorisations Issued","Authority TRE authorisations issued & documented.","Crew Training Coordinator","Compliance, Quality","2026-10-05","2026-10-23","Medium","Not Started",0,"No","EXM-8","-","2026-06-20","-"],
+["EXM","Oversight",10,"Examiner Standardisation Oversight Plan","Ongoing standardisation/oversight plan for TRE.","Standards Manager","Quality","2026-10-12","2026-11-13","Low","Not Started",0,"No","EXM-8","-","2026-06-20","-"],
+
+/* === 6 Training Devices & Simulator === */
+["SIM","Strategy",1,"Simulator Availability & Sourcing","Market analysis & sourcing of FFS for the new type (own/partner/3rd party).","Simulator Manager","Procurement, Boeing Liaison","2026-01-19","2026-03-06","High","Completed",100,"No","-","FFS slots scarce on the market","2026-03-06","2 vendors shortlisted"],
+["SIM","Contract",2,"FFS Contract / Slot Booking","Conclude contract & secure slots for the Full Flight Simulator.","Procurement Lead","Simulator Manager, Legal","2026-03-09","2026-04-24","High","In Progress",70,"No","SIM-1","Contract negotiation ongoing","2026-06-15","final round"],
+["SIM","Devices",3,"FTD / CBT / FMS Trainer Procurement","Procure supplementary training devices (FTD, part-task, CBT).","Simulator Manager","IT, Procurement","2026-03-23","2026-05-29","Medium","In Progress",45,"No","SIM-1","-","2026-06-18","-"],
+["SIM","Data",4,"Simulator Data Package (Boeing)","Procure & load the Boeing sim data package new type.","Boeing Liaison","Simulator Manager","2026-04-06","2026-05-22","High","In Progress",35,"No","BOE-2","Boeing lead time","2026-06-18","-"],
+["SIM","Installation",5,"Simulator Configuration & Update","Hardware/software configuration of the FFS to new type standard.","Simulator Manager","IT, Vendor","2026-06-01","2026-07-24","High","Not Started",0,"No","SIM-2,SIM-4","-","2026-06-20","-"],
+["SIM","Acceptance",6,"Simulator Acceptance Test","Acceptance tests & technical validation of the simulator.","Simulator Manager","Quality","2026-07-27","2026-08-21","High","Not Started",0,"No","SIM-5","-","2026-06-20","-"],
+["SIM","Qualification",7,"Simulator Qualification (Authority)","Authority FSTD qualification (initial eval, Level D).","Regulatory Compliance Manager","Simulator Manager, Quality","2026-08-24","2026-09-18","High","Not Started",0,"Yes","SIM-6","Critical – blocks all sim courses","2026-06-20","MS7"],
+["SIM","Operations",8,"Sim Schedule & Slot Planning Courses","Detailed sim scheduling for all new type courses.","Simulator Manager","Crew Planning, Training","2026-09-21","2026-10-16","Medium","Not Started",0,"No","SIM-7","-","2026-06-20","-"],
+["SIM","Maintenance",9,"Simulator Maintenance & Support SLA","Maintenance/support concept & SLA for training operations.","Simulator Manager","Vendor, Procurement","2026-09-21","2026-10-30","Low","Not Started",0,"No","SIM-7","-","2026-06-20","-"],
+["SIM","Devices",10,"EFB / OFP / Performance Tool Setup","Provide EFB apps & performance tools for training.","IT Coordinator","Flight Ops","2026-06-15","2026-08-14","Medium","Not Started",0,"No","SIM-3","-","2026-06-20","-"],
+["SIM","Recurrent",11,"Sim Recurrent Capacity Planning","Capacity planning for sim recurrent after EIS.","Simulator Manager","Crew Planning","2026-10-19","2026-11-27","Low","Not Started",0,"No","SIM-8","-","2026-06-20","-"],
+
+/* === 7 Training Material Development === */
+["TMD","Planning",1,"Training Material Inventory & Gaps","Stocktake & needs for learning material for new type.","Training Development Lead","Standards","2026-02-16","2026-03-20","Medium","Completed",100,"No","-","-","2026-03-20","-"],
+["TMD","CBT",2,"CBT / eLearning Modules – New Type","Develop computer-based training modules (systems/diff).","Training Development Lead","IT, Boeing Liaison","2026-03-23","2026-05-22","High","In Progress",50,"No","TMD-1,REG-5","-","2026-06-19","-"],
+["TMD","Courseware",3,"Ground School Courseware","Classroom/self-study material for technical & systems.","Training Development Lead","Standards","2026-04-06","2026-06-05","High","In Progress",40,"No","TMD-1","-","2026-06-19","-"],
+["TMD","FCOM",4,"FCOM/QRH Training Extracts","Training-relevant extracts & preparation from FCOM/QRH.","Standards Manager","Boeing Liaison","2026-04-20","2026-06-05","Medium","In Progress",30,"No","BOE-2","-","2026-06-19","-"],
+["TMD","Sim",5,"Simulator Lesson Plans / Sortie Guides","Detailed sim lesson plans & sortie guides.","TRI Lead","Standards","2026-05-04","2026-07-03","High","Not Started",0,"No","OMD-3","-","2026-06-19","-"],
+["TMD","Assessment",6,"Knowledge Tests / Question Bank","Build knowledge tests & question bank new type.","Training Development Lead","Standards","2026-05-18","2026-07-17","Medium","Not Started",0,"No","TMD-3","-","2026-06-19","-"],
+["TMD","Media",7,"Cockpit Posters / Visuals / Animations","Visual learning media (panels, flows, animations).","Training Development Lead","IT","2026-06-01","2026-07-17","Low","Not Started",0,"No","TMD-3","-","2026-06-19","-"],
+["TMD","Review",8,"Subject Review & Material Validation","Technical & instructional validation of the material.","Standards Manager","Quality, TRI Lead","2026-07-20","2026-08-21","High","Not Started",0,"No","TMD-2,TMD-3,TMD-5","-","2026-06-19","-"],
+["TMD","LMS",9,"LMS Integration & Deployment","Load the modules into the Learning Management System.","IT Coordinator","Training Dev","2026-08-24","2026-09-18","Medium","Not Started",0,"No","TMD-8","-","2026-06-19","-"],
+["TMD","Release",10,"Training Material Released","Formal release & provision of all training material.","Chief Training Captain","Quality","2026-09-21","2026-09-25","High","Not Started",0,"Yes","TMD-9","-","2026-06-19","MS8"],
+["TMD","Maintenance",11,"Material Revision & Feedback Loop","Revision process & feedback incorporation after course start.","Training Development Lead","Standards","2026-09-28","2027-06-15","Low","Not Started",0,"No","TMD-10","-","2026-06-19","-"],
+
+/* === 8 Documentation & Manuals === */
+["DOC","Planning",1,"Document Map – New Type","Overview of all affected manuals & documents for new type.","Documentation Manager","Standards, Flight Ops","2026-02-09","2026-03-06","Medium","Completed",100,"No","-","-","2026-03-06","-"],
+["DOC","FCOM",2,"FCOM Preparation & Distribution","Provide & distribute FCOM for the new type.","Documentation Manager","Boeing Liaison","2026-03-09","2026-04-24","High","In Progress",55,"No","DOC-1,BOE-2","-","2026-06-17","-"],
+["DOC","QRH",3,"QRH / Checklist Customisation","Customise & release QRH / normal & non-normal checklists.","Standards Manager","Flight Ops","2026-03-23","2026-05-15","High","In Progress",45,"No","DOC-1","-","2026-06-17","-"],
+["DOC","MEL",4,"MEL / CDL Creation","Create the Minimum Equipment List / CDL for new type.","Flight Ops Engineering","Compliance","2026-04-06","2026-05-29","High","In Progress",30,"No","DOC-1","Authority approval of MEL","2026-06-17","-"],
+["DOC","Performance",5,"Performance Manual / RTOW","Performance documents & RTOW tables new type.","Flight Ops Engineering","IT","2026-04-20","2026-06-12","Medium","Not Started",0,"No","DOC-1","-","2026-06-17","-"],
+["DOC","OM-B",6,"OM-B Aircraft Operating Manual","Create/adapt OM-B for the new type.","Standards Manager","Flight Ops","2026-05-04","2026-06-26","High","Not Started",0,"No","DOC-2,DOC-3","-","2026-06-17","-"],
+["DOC","Route",7,"OM-C Route & Aerodrome Update","Review OM-C relevance / adaptations for new type operations.","Flight Ops","Standards","2026-05-18","2026-06-26","Low","Not Started",0,"No","DOC-1","-","2026-06-17","-"],
+["DOC","Review",8,"Manuals Cross-Review & Consistency","Cross-check & consistency review of all manuals.","Quality Manager","Standards, Documentation","2026-06-29","2026-08-07","High","Not Started",0,"No","DOC-2,DOC-3,DOC-4,DOC-6","-","2026-06-17","-"],
+["DOC","Approval",9,"Manuals Release & Authority Submission","Release and, where required, submit the relevant manuals.","Regulatory Compliance Manager","Quality","2026-08-10","2026-09-04","High","Not Started",0,"No","DOC-8","-","2026-06-17","-"],
+["DOC","Distribution",10,"Document Distribution & EFB Sync","Distribute released documents via EFB/DMS.","IT Coordinator","Documentation","2026-09-07","2026-09-25","Medium","Not Started",0,"No","DOC-9","-","2026-06-17","-"],
+["DOC","Maintenance",11,"Revision Service & Rev Control","Ongoing revision service & change management.","Documentation Manager","Quality","2026-09-28","2027-06-15","Low","Not Started",0,"No","DOC-10","-","2026-06-17","-"],
+
+/* === 9 3rd Parties & Boeing Coordination === */
+["BOE","Setup",1,"Boeing Programme Contact & Kick-off","Establish the Boeing interface & programme kick-off.","Boeing Liaison","Chief Training Captain","2026-01-12","2026-02-06","High","Completed",100,"No","-","-","2026-02-06","SPOC named"],
+["BOE","Data",2,"Boeing Data & Manual License","License/contract for Boeing data, manuals & revision service.","Procurement Lead","Boeing Liaison, Legal","2026-02-09","2026-03-27","High","In Progress",65,"No","BOE-1","-","2026-06-15","Contract in review"],
+["BOE","Training",3,"Boeing Training Support Agreement","Agreement on Boeing train-the-trainer & support.","Boeing Liaison","Procurement","2026-02-23","2026-04-10","High","In Progress",50,"No","BOE-1","Boeing capacity limited","2026-06-15","-"],
+["BOE","Sim Vendor",4,"3rd Party Simulator Vendor Mgmt","Manage external simulator/FSTD vendors.","Simulator Manager","Procurement","2026-03-09","2026-05-08","High","In Progress",40,"No","BOE-1,SIM-1","-","2026-06-18","-"],
+["BOE","CBT Vendor",5,"3rd Party CBT/Courseware Vendor","Select & manage external courseware suppliers.","Training Development Lead","Procurement","2026-03-23","2026-05-15","Medium","In Progress",35,"No","BOE-1","-","2026-06-18","-"],
+["BOE","Logistics",6,"Boeing Spares / Aircraft Delivery Sync","Align the training plan with Boeing aircraft delivery.","Boeing Liaison","Fleet, Crew Planning","2026-04-06","2026-06-05","High","Not Started",0,"No","BOE-1","Delivery slip risk","2026-06-20","-"],
+["BOE","Quality",7,"Vendor Quality / Oversight Audits","Oversight/quality audits at external training partners.","Quality Manager","Procurement","2026-05-18","2026-07-10","Medium","Not Started",0,"No","BOE-4,BOE-5","-","2026-06-20","-"],
+["BOE","Coordination",8,"Boeing Technical Query Management","Process for technical queries to Boeing (TQ/service requests).","Boeing Liaison","Standards","2026-03-02","2027-06-15","Medium","In Progress",30,"No","BOE-1","-","2026-06-20","ongoing"],
+["BOE","Contracts",9,"3rd Party Contracts Finalised","Finalise all relevant third-party contracts.","Procurement Lead","Legal","2026-06-08","2026-07-31","High","Not Started",0,"No","BOE-2,BOE-4,BOE-5","-","2026-06-20","-"],
+["BOE","Review",10,"Boeing/3rd Party Readiness Review","Joint readiness review with Boeing & partners.","Boeing Liaison","Chief Training Captain","2026-10-19","2026-11-13","Medium","Not Started",0,"No","BOE-3,BOE-6,BOE-9","-","2026-06-20","-"],
+
+/* === 10 Entry Into Service (EIS) === */
+["EIS","Concept MS",1,"New Aircraft Type Training Concept Approved","Programme milestone: release of the overall training concept.","Chief Training Captain","Standards, Compliance","2026-02-16","2026-02-20","High","Completed",100,"Yes","REG-1","-","2026-02-20","MS – reached"],
+["EIS","Pilot Pool",2,"Pilot Pool & Conversion Plan","Define the crew pool & sequence of type conversions.","Head of Training","Crew Planning, HR","2026-04-06","2026-05-29","High","In Progress",45,"No","INS-1","-","2026-06-20","-"],
+["EIS","TR Course",3,"First Pilot Type Rating Course Started","Programme milestone: start of the first pilot type rating course.","Chief Training Captain","Training, Crew Planning","2026-10-05","2026-10-09","High","Not Started",0,"Yes","REG-9,SIM-7,INS-9,TMD-10","Depends on approval + sim + instructors","2026-06-20","MS5 – critical path"],
+["EIS","TR Course",4,"First Pilot Type Rating Course Completed","Programme milestone: completion of the first TR course incl. skill test.","Chief Training Captain","Examiner Lead, Training","2026-11-30","2026-12-04","High","Not Started",0,"Yes","EIS-3","-","2026-06-20","MS6"],
+["EIS","Line Training",5,"Line Training / LIFUS Concept","Concept for Line Flying Under Supervision & line-check rules.","Standards Manager","Flight Ops","2026-09-21","2026-11-06","High","Not Started",0,"No","OMD-7","-","2026-06-20","-"],
+["EIS","Crew Planning",6,"Crew Roster Integration – New Type","Integrate new-type-qualified crews into rostering.","Crew Planning Manager","Head of Training","2026-11-09","2026-12-11","Medium","Not Started",0,"No","EIS-4","-","2026-06-20","-"],
+["EIS","Readiness",7,"Operational Readiness Review","Programme milestone: ORR before line operations start.","Chief Training Captain","Flight Ops, Safety, Quality","2027-01-04","2027-01-15","High","Not Started",0,"Yes","EIS-4,EIS-5,DOC-9","-","2026-06-20","MS9"],
+["EIS","Safety",8,"Safety Risk Assessment EIS","Safety assessment & risk assessment for entry into service.","Safety Manager","Flight Ops, Quality","2026-11-16","2026-12-18","High","Not Started",0,"No","EIS-5","-","2026-06-20","-"],
+["EIS","Line Check",9,"Initial Line Check Programme","Initial line checks & release of the first line crews.","Examiner Lead (TRE)","Flight Ops","2027-01-18","2027-02-26","High","Not Started",0,"No","EIS-7","-","2026-06-20","-"],
+["EIS","Go-Live",10,"Entry Into Service (EIS)","Programme milestone: start of commercial new type line operations.","Chief Training Captain","Flight Ops, Network, Safety","2027-06-08","2027-06-15","High","Not Started",0,"Yes","EIS-7,EIS-9","End date – overall programme objective","2026-06-20","MS10 – EIS"],
+["EIS","Post-EIS",11,"Post-EIS Lessons Learned Review","Evaluation & lessons learned after entry into service.","Chief Training Captain","Quality, Safety","2027-06-15","2027-07-15","Low","Not Started",0,"No","EIS-10","-","2026-06-20","-"],
+];
+
+/* ---------- ADDITIONAL DEMO PROJECTS (own independent task lists) ---------- */
+const T_A320 = [
+["REG","Concept",1,"A320neo Differences Training Concept","Create & agree the CEO→NEO differences training concept.","Fleet Captain A320","Standards, Compliance","2026-01-12","2026-02-13","High","Completed",100,"No","-","-","2026-02-13","-"],
+["REG","Approval",2,"Authority Acceptance of Differences Programme","Acceptance of the differences training by the authority.","Regulatory Compliance Manager","Quality","2026-02-16","2026-06-10","High","In Progress",75,"No","REG-1","Acceptance is slipping","2026-06-12","Resubmission open"],
+["OMD","Content",3,"OM-D NEO Differences Chapter","Add A320neo differences to the OM-D (engines/PEP/systems).","Standards Manager","Fleet Captain A320","2026-02-16","2026-04-17","High","Completed",100,"No","REG-1","-","2026-04-17","-"],
+["SIM","Data",4,"A320neo Sim Data Update","Load NEO data package (LEAP/PW) into existing A320 FFS.","Simulator Manager","Airbus Liaison","2026-03-02","2026-05-08","High","In Progress",60,"No","BOE-11","-","2026-06-15","-"],
+["SIM","Config",5,"Simulator Differences Configuration","Adapt/validate FFS to NEO standard.","Simulator Manager","Vendor","2026-05-11","2026-07-10","High","In Progress",30,"No","SIM-4","-","2026-06-18","-"],
+["INS","Briefing",6,"Instructor Differences Briefing","Briefing/standardisation of instructors for NEO differences.","TRI Lead","Standards","2026-04-06","2026-05-15","Medium","Completed",100,"No","OMD-3","-","2026-05-15","-"],
+["TMD","CBT",7,"NEO Differences CBT/eLearning","Self-study differences module for all A320 crews.","Training Development Lead","IT","2026-03-16","2026-05-29","High","In Progress",55,"No","OMD-3","-","2026-06-19","-"],
+["TMD","FCOM",8,"FCOM/QRH NEO Updates","Incorporate NEO differences into FCOM/QRH extracts.","Standards Manager","Airbus Liaison","2026-04-13","2026-06-12","Medium","In Progress",40,"No","BOE-11","-","2026-06-17","-"],
+["DOC","MEL",9,"MEL Update A320neo","Update MEL/CDL for the NEO sub-type.","Flight Ops Engineering","Compliance","2026-05-04","2026-07-03","Medium","Not Started",0,"No","REG-1","-","2026-06-17","-"],
+["EXM","Briefing",10,"Examiner Differences Briefing","Standardisation of TRE for NEO differences checks.","Examiner Lead (TRE)","Standards","2026-06-08","2026-07-17","Medium","Not Started",0,"No","OMD-3","-","2026-06-20","-"],
+["BOE","Vendor",11,"Airbus Data & Manual License NEO","License/data package from Airbus for NEO differences.","Procurement Lead","Airbus Liaison","2026-01-19","2026-03-13","High","Completed",100,"No","-","-","2026-03-13","-"],
+["EIS","Concept MS",12,"A320neo Differences Concept Approved","Milestone: release of the differences training concept.","Fleet Captain A320","Standards","2026-02-16","2026-02-20","High","Completed",100,"Yes","REG-1","-","2026-02-20","MS – reached"],
+["EIS","Rollout MS",13,"Fleet Differences Rollout Started","Milestone: start of the fleet-wide differences training.","Fleet Captain A320","Crew Planning","2026-08-03","2026-08-07","High","Not Started",0,"Yes","REG-2,SIM-5","Depends on authority acceptance","2026-06-20","MS"],
+["EIS","Go-Live",14,"Entry Into Service A320neo","Milestone: start of A320neo line operations.","Fleet Captain A320","Flight Ops, Network","2027-02-08","2027-02-15","High","Not Started",0,"Yes","EIS-13","-","2026-06-20","MS – EIS"],
+];
+const T_E2 = [
+["REG","Concept",1,"E195-E2 Training Concept Submission","Create & submit the initial type-rating training concept E195-E2.","Project Captain E2","Compliance","2026-05-04","2026-08-14","High","In Progress",20,"No","-","New manufacturer – process unclear","2026-06-20","Early phase"],
+["REG","Approval",2,"ATO Extension E195-E2","Application to extend the ATO for Embraer E2.","Regulatory Compliance Manager","Quality","2026-08-17","2026-11-06","High","Not Started",0,"No","REG-1","-","2026-06-20","-"],
+["SIM","Sourcing",3,"FFS Sourcing E195-E2","Market analysis & sourcing of the E2 simulator.","Simulator Manager","Procurement","2026-06-01","2026-09-04","High","In Progress",15,"No","-","Sim availability unclear","2026-06-20","-"],
+["OMD","Structure",4,"OM-D Structure E195-E2","Build the OM-D training chapters for E2.","Standards Manager","Project Captain E2","2026-09-07","2026-11-13","Medium","Not Started",0,"No","REG-1","-","2026-06-20","-"],
+["INS","Planning",5,"Instructor Demand & Plan E2","Instructor demand planning for E2.","Head of Training","Crew Planning","2026-09-07","2026-10-16","High","Not Started",0,"No","-","-","2026-06-20","-"],
+["EXM","Planning",6,"Examiner Concept E2","TRE demand & authorisation concept for E2.","Project Captain E2","Compliance","2026-10-05","2026-11-20","Medium","Not Started",0,"No","-","-","2026-06-20","-"],
+["TMD","Planning",7,"Training Material Inventory E2","Needs & inventory of learning material for E2.","Training Development Lead","Standards","2026-06-15","2026-08-21","Medium","In Progress",10,"No","-","-","2026-06-20","-"],
+["DOC","Planning",8,"Document Map E2","Overview of affected manuals for E2.","Documentation Manager","Standards","2026-09-07","2026-10-09","Low","Not Started",0,"No","-","-","2026-06-20","-"],
+["BOE","Setup",9,"Embraer Coordination Kick-off","Establish the Embraer interface & programme kick-off.","Project Captain E2","Procurement","2026-05-11","2026-06-19","High","In Progress",50,"No","-","-","2026-06-20","-"],
+["EIS","Concept MS",10,"E195-E2 Training Concept Approved","Milestone: release of the E2 training concept.","Project Captain E2","Standards","2026-11-23","2026-11-27","High","Not Started",0,"Yes","REG-1,OMD-4","-","2026-06-20","MS"],
+["EIS","Sim MS",11,"Simulator Qualification E195-E2","Milestone: FSTD qualification E2.","Simulator Manager","Compliance","2027-05-03","2027-05-28","High","Not Started",0,"Yes","SIM-3","-","2026-06-20","MS"],
+["EIS","TR MS",12,"First Type Rating Course E195-E2","Milestone: start of the first type rating course E2.","Project Captain E2","Training","2027-08-02","2027-08-06","High","Not Started",0,"Yes","REG-2,EIS-11","-","2026-06-20","MS"],
+["EIS","Go-Live",13,"Entry Into Service E195-E2","Milestone: start of E195-E2 line operations.","Project Captain E2","Flight Ops, Network","2027-10-25","2027-11-01","High","Not Started",0,"Yes","EIS-12","-","2026-06-20","MS – EIS"],
+];
+
+const WSNAME = Object.fromEntries(WS.map(w=>[w[1],w[0]]));
+const COLS = ["ws","sub","no","task","desc","resp","support","start","due","prio","status","pct","ms","deps","risk","upd","comment"];
+const TODAY = new Date("2026-06-25");
+const TODAY_ISO = "2026-06-25";
+const KEY = "ew_pm_portfolio_v1";
+const COPYRIGHT = "© Copyright by Patrick Thorn";
+// Full Eurowings status set. rag buckets: g=done · b=in progress · a=planned/hold · r=overdue · x=excluded(N/A)
+const STATUS_META = {
+  "Not Started":    {cls:"s-not",  rag:"a", done:false},
+  "In Progress":    {cls:"s-prog", rag:"b", done:false},
+  "Needs Review":   {cls:"s-rev",  rag:"b", done:false},
+  "On Hold":        {cls:"s-hold", rag:"a", done:false},
+  "Completed":      {cls:"s-comp", rag:"g", done:true },
+  "Approved":       {cls:"s-comp", rag:"g", done:true },
+  "Not Applicable": {cls:"s-na",   rag:"x", done:true },
+  "Overdue":        {cls:"s-del",  rag:"r", done:false}
+};
+const STATUSES = Object.keys(STATUS_META);
+const FORMATS = ["","Articulate 360","PDF","PPT","SCORM only","WBT","WBT + PDF","WBT + PPT","WORD","WORD + PDF"];
+const PRIOS = ["High","Medium","Low"];
+const statusDone = s => !!(STATUS_META[s]||{}).done;
+const statusRag  = s => (STATUS_META[s]||{}).rag || "a";
+const VIEWLBL = {portfolio:"Portfolio overview",dash:"Dashboard",table:"Master Task List",gantt:"Gantt / Timeline",todo:"To-Do",report:"Status report"};
+const MONTHS_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+let PROJECTS = [], ACTIVE = 0, DATA = [], UID = 0, VIEW = "portfolio", REPORTTYPE = "project";
+
+/* ---------- helpers ---------- */
+const pad = n => String(n).padStart(2,"0");
+const days = (s,e) => Math.round((new Date(e)-new Date(s))/864e5);
+const de = iso => { if(!iso) return ""; const d=new Date(iso); return pad(d.getDate())+" "+MONTHS_EN[d.getMonth()]+" "+d.getFullYear(); };
+const h = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const statusClass = s => (STATUS_META[s]||{}).cls || "s-not";
+const prioClass = p => ({"High":"p-high","Medium":"p-med","Low":"p-low"}[p]||"p-med");
+const opt = (arr,v) => arr.map(o=>`<option ${o===v?"selected":""}>${h(o)}</option>`).join("");
+// like opt(), but guarantees the current value is selectable even if it is not in the preset list
+const optWith = (arr,v) => opt(arr.includes(v||"")?arr:[...arr,v],v);
+// case-insensitive, locale-aware alphabetical comparator
+const alpha = (a,b) => String(a).localeCompare(String(b), undefined, {sensitivity:"base", numeric:true});
+// alphabetically-sorted <option>s with a blank entry on top; keeps the current value selectable even if it is not in the list
+const optSorted = (arr,v,blank=true) => { const cur=v==null?"":String(v);
+  const set=[...new Set([...arr, cur].filter(x=>x!=="" && x!=null))].sort(alpha);
+  return (blank?`<option value="" ${!cur?"selected":""}>—</option>`:"")
+    + set.map(o=>`<option ${o===cur?"selected":""}>${h(o)}</option>`).join(""); };
+// Workstreams are freely definable per project (p.ws); default = global WS list
+function pWS(p){ return (p&&p.ws&&p.ws.length)?p.ws:WS; }
+const wsNameFor = (p,a) => { const w=pWS(p).find(x=>x[1]===a); return w?w[0]:a; };
+const wsName = a => wsNameFor(PROJECTS[ACTIVE],a);
+function wsCodes(p){ const base=pWS(p), seen=base.map(w=>w[1]), extra=[];
+  ((p&&p.tasks)||[]).forEach(d=>{ if(!seen.includes(d.ws)&&!extra.includes(d.ws)) extra.push(d.ws); });
+  return [...base, ...extra.map(c=>[c,c])]; }
+const wsOpt = v => { const list=[...pWS(PROJECTS[ACTIVE])].sort((a,b)=>alpha(a[0],b[0]));
+  let o=`<option value="" ${!v?"selected":""}>—</option>`+list.map(([n,a])=>`<option value="${a}" ${a===v?"selected":""}>${h(n)}</option>`).join("");
+  if(v&&!list.some(w=>w[1]===v)) o+=`<option value="${h(v)}" selected>${h(v)} (external)</option>`;
+  return o; };
+function deriveWsCode(name,taken){ const base=String(name||"WS").replace(/[^A-Za-z0-9]+/g," ").trim().toUpperCase();
+  let code = base.indexOf(" ")>=0 ? base.split(/\s+/).map(w=>w[0]).join("").slice(0,5) : base.slice(0,4);
+  code=code||"WS"; let c=code,i=2; while(taken&&taken.has(c)){ c=code+i; i++; } if(taken) taken.add(c); return c; }
+function wsFromTasks(tasks){ const seen=[]; tasks.forEach(d=>{ if(!seen.includes(d.ws)) seen.push(d.ws); }); return seen.map(c=>[WSNAME[c]||c,c]); }
+
+/* ---------- managed option lists (Owner / Sub-Workstream / Departments / Format) ----------
+   Each project keeps freely editable drop-down vocabularies in p.lists; managed via the Lists dialog. */
+const MGFIELDS = [["resp","Owner"],["sub","Sub-Workstream"],["support","Supporting department"],["format","Format"]];
+const MGLABEL = f => (MGFIELDS.find(x=>x[0]===f)||[f,f])[1];
+function distinctVals(tasks,field){ const seen=[]; (tasks||[]).forEach(d=>{ const v=(d[field]==null?"":String(d[field])).trim();
+  if(v && v!=="–" && v!=="-" && !seen.includes(v)) seen.push(v); }); return seen; }
+function ensureLists(p){ if(!p.lists) p.lists={};
+  if(!p.lists.format) p.lists.format=[...new Set([...FORMATS.filter(Boolean), ...distinctVals(p.tasks,"format")])];
+  ["resp","sub","support"].forEach(f=>{ if(!p.lists[f]) p.lists[f]=distinctVals(p.tasks,f); }); return p.lists; }
+function listFor(field){ const p=PROJECTS[ACTIVE]; ensureLists(p); return p.lists[field]||[]; }
+function addToList(field,val){ const v=String(val||"").trim(); if(!v) return;
+  const p=PROJECTS[ACTIVE]; ensureLists(p); if(!p.lists[field].includes(v)) p.lists[field].push(v); }
+function mergeListsFromTasks(p){ ensureLists(p); MGFIELDS.forEach(([f])=>distinctVals(p.tasks,f).forEach(v=>{ if(!p.lists[f].includes(v)) p.lists[f].push(v); })); }
+// build a managed <select> for a cell: current value always selectable, "—" for empty, "➕ New…" to extend the list inline
+function mgSelect(field,v){ const cur=v==null?"":String(v);
+  const list=[...new Set([...listFor(field), cur].filter(x=>x!=="" && x!=null))].sort(alpha);   // alphabetical
+  const opts=list.map(o=>`<option ${o===cur?"selected":""}>${h(o)}</option>`).join("");
+  return `<select class="cell-input mgsel" data-field="${field}"><option value="" ${!cur?"selected":""}>—</option>${opts}<option value="__add__">➕ New…</option></select>`; }
+
+/* ---------- data model + persistence ---------- */
+function mkTasks(arr){ return arr.map((r,i)=>{ const o={}; COLS.forEach((c,j)=>o[c]=r[j]); o.uid=i; return o; }); }
+// Status automation: overdue, not-done tasks -> Overdue (and back when the due date is in the future again)
+function autoStatus(d){
+  if(statusDone(d.status)) return;                 // Completed / Approved / Not Applicable: leave
+  if(new Date(d.due) < TODAY) d.status="Overdue";
+  else if(d.status==="Overdue") d.status = (d.pct>0 ? "In Progress" : "Not Started");
+}
+function recomputeProject(p){ ensureLists(p); p.tasks.forEach(d=>{ if(d.ms==="Ja")d.ms="Yes"; else if(d.ms==="Nein")d.ms="No";
+  if(d.status==="Delayed") d.status="Overdue";     // migrate old status value
+  if(!Array.isArray(d.todos)) d.todos=[]; if(d.format==null) d.format=""; if(d.revision==null) d.revision="";
+  if(d.todos.length){ d.pct=Math.round(d.todos.filter(t=>t.done).length/d.todos.length*100); }   // % auto-derived from to-dos
+  d.tid=d.ws+"-"+pad(d.no); d.dur=days(d.start,d.due); autoStatus(d); }); }
+function recompute(){ recomputeProject(PROJECTS[ACTIVE]); }
+function seedPortfolio(){
+  PROJECTS = [
+    {id:"p-typerating",name:"New Aircraft Type – Type Rating Program",fleet:"New Aircraft Type",lead:"Chief Training Captain",phase:"Execution",eis:"2027-06-15",tasks:mkTasks(T)},
+    {id:"p-a320neo",name:"Airbus A320neo – CEO→NEO Differences",fleet:"Airbus A320neo",lead:"Fleet Captain A320",phase:"Execution",eis:"2027-02-15",tasks:mkTasks(T_A320)},
+    {id:"p-e195e2",name:"Embraer E195-E2 – New Type Introduction",fleet:"Embraer E195-E2",lead:"Project Captain E2",phase:"Planning",eis:"2027-11-01",tasks:mkTasks(T_E2)},
+  ];
+  PROJECTS.forEach(recomputeProject);
+  // a few demo to-dos so the To-Do tab shows how it works
+  const demo={ "OMD-3":["Draft syllabus outline","Align with OEB differences","Internal review with Standards"],
+    "SIM-2":["Finalise commercial terms","Confirm slot calendar","Legal sign-off"],
+    "INS-4":["Request Boeing slots","Nominate attendees","Prepare pre-reading"] };
+  PROJECTS[0].tasks.forEach(d=>{ const k=demo[normId(d.tid)]; if(k) d.todos=k.map((t,i)=>({id:"sd"+normId(d.tid)+i,text:t,done:i===0})); });
+  ACTIVE = 0;
+}
+/* ---------- critical path ----------
+   Task IDs are shown as REG-01 but referenced in dependencies as REG-1
+   -> normId() unifies both spellings for matching.
+   Backward pass from the latest milestone through the latest-finishing
+   predecessor dependency = binding chain to the final milestone. */
+const normId = s => String(s==null?"":s).trim().replace(/-0*(\d)/,"-$1");
+function criticalPath(tasks){
+  const map={}; tasks.forEach(t=>map[normId(t.tid)]=t);
+  const depsOf = t => String(t.deps||"").split(",").map(s=>normId(s)).filter(x=>x&&x!=="-"&&map[x]);
+  let end=null,endD=-Infinity;
+  tasks.forEach(t=>{ if(t.ms==="Yes"){ const d=+new Date(t.due); if(d>endD){endD=d;end=normId(t.tid);} }});
+  if(!end) tasks.forEach(t=>{ const d=+new Date(t.due); if(d>endD){endD=d;end=normId(t.tid);} });
+  const order=[], seen=new Set(); let cur=end,g=0;
+  while(cur&&!seen.has(cur)&&g++<4000){
+    seen.add(cur); order.unshift(cur);
+    const t=map[cur]; if(!t) break;
+    const deps=depsOf(t); if(!deps.length) break;
+    let best=null,bd=-Infinity;
+    deps.forEach(dp=>{ const d=+new Date(map[dp].due); if(d>bd){bd=d;best=dp;} });
+    cur=best;
+  }
+  return {set:new Set(order), order, endTid:end, length:order.length};
+}
+function setActive(i){ ACTIVE=Math.max(0,Math.min(i,PROJECTS.length-1)); DATA=PROJECTS[ACTIVE].tasks;
+  UID=DATA.reduce((m,d)=>Math.max(m,d.uid),-1)+1; recompute(); }
+function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify({active:PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].id,projects:PROJECTS})); }catch(e){} }
+function save(){ saveLocal(); scheduleCloudSave(); }
+function load(){
+  let s=null; try{ s=localStorage.getItem(KEY); }catch(e){}
+  if(s){ try{ const o=JSON.parse(s); if(o&&o.projects&&o.projects.length){ PROJECTS=o.projects; PROJECTS.forEach(recomputeProject);
+      const i=PROJECTS.findIndex(p=>p.id===o.active); setActive(i>=0?i:0); return; } }catch(e){} }
+  seedPortfolio(); setActive(0); save();
+}
+
+/* ---------- portfolio statistics ---------- */
+function projStats(p){
+  const t=p.tasks, n=t.length||1;
+  const done=t.filter(d=>statusDone(d.status)).length;
+  const open=t.length-done;
+  const delayed=t.filter(d=>d.status==="Overdue").length;
+  const crit=t.filter(d=>d.status==="Overdue"||(d.prio==="High"&&!statusDone(d.status))).length;
+  const msAll=t.filter(d=>d.ms==="Yes"), msDone=msAll.filter(d=>statusDone(d.status)).length;
+  const overdueMs=msAll.filter(d=>!statusDone(d.status) && new Date(d.due)<TODAY).length;
+  const overall=Math.round(t.reduce((a,d)=>a+d.pct,0)/n);
+  const g=t.filter(d=>statusRag(d.status)==="g").length, b=t.filter(d=>statusRag(d.status)==="b").length,
+        a=t.filter(d=>statusRag(d.status)==="a").length, r=t.filter(d=>statusRag(d.status)==="r").length;
+  let health="g"; if(delayed>0) health="a"; if(delayed>=3||overdueMs>0) health="r";
+  return {n:t.length,done,open,delayed,crit,ms:msAll.length,msDone,overall,g,b,a,r,health};
+}
+
+/* ---------- VIEWS / NAVIGATION ---------- */
+function showView(v){
+  VIEW=v;
+  document.querySelectorAll("#nav .tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===v));
+  ["portfolio","dash","table","gantt","todo","report"].forEach(id=>document.getElementById(id).classList.toggle("active",id===v));
+  if(v==="portfolio") renderPortfolio();
+  else if(v==="dash") buildDashboard();
+  else if(v==="table") renderTable();
+  else if(v==="gantt"){ buildGantt(); requestAnimationFrame(()=>{ try{drawDeps();}catch(e){} }); }
+  else if(v==="todo") buildTodos();
+  updateHeader();
+  window.scrollTo(0,0);
+}
+function showReport(type){ REPORTTYPE=type; buildReport(); showView("report"); }
+function buildReport(){
+  document.getElementById("report").innerHTML = REPORTTYPE==="portfolio" ? portfolioReportHTML() : projectReportHTML(PROJECTS[ACTIVE]);
+}
+function updateHeader(){
+  const p=PROJECTS[ACTIVE], meta=document.getElementById("hdrMeta");
+  const portfolioCtx = (VIEW==="portfolio") || (VIEW==="report" && REPORTTYPE==="portfolio");
+  if(portfolioCtx){
+    meta.style.display="none";
+  } else {
+    meta.style.display="flex";
+    document.getElementById("hdrProj").textContent=p.name;
+    document.getElementById("hdrLead").textContent=p.lead;
+    document.getElementById("hdrPhase").textContent=p.phase;
+    document.getElementById("hdrEis").value=p.eis;
+  }
+  document.getElementById("phProject").textContent = portfolioCtx ? "Portfolio · all projects" : (p.fleet+" · "+p.name);
+  document.getElementById("phView").textContent = VIEWLBL[VIEW];
+  document.getElementById("pfFoot").textContent = COPYRIGHT;
+}
+
+/* ---------- STATUS REPORT (1-Seiten-PDF) ---------- */
+function projectReportHTML(p){
+  const s=projStats(p), cp=criticalPath(p.tasks);
+  const cmap=Object.fromEntries(p.tasks.map(t=>[normId(t.tid),t]));
+  const hc={g:"var(--green)",a:"var(--amber)",r:"var(--red)"}[s.health];
+  const ht={g:"On Track",a:"At Risk",r:"Critical"}[s.health];
+  const wsRows=wsCodes(p).map(([name,abbr])=>{ const items=p.tasks.filter(d=>d.ws===abbr); if(!items.length) return "";
+    const pr=Math.round(items.reduce((a,d)=>a+d.pct,0)/items.length);
+    return `<div class="repws"><span title="${name}">${name}</span><div class="rtrack"><i style="width:${pr}%"></i></div><b>${pr}%</b></div>`; }).join("");
+  const ms=p.tasks.filter(d=>d.ms==="Yes").sort((a,b)=>new Date(a.due)-new Date(b.due));
+  const msRows=ms.map(m=>{ const done=statusDone(m.status); const od=!done&&new Date(m.due)<TODAY;
+    const col=done?"var(--green)":od?"var(--red)":statusRag(m.status)==="b"?"var(--blue)":"var(--grey)";
+    const sym=done?"✓":od?"!":"◆";
+    return `<div class="rep-ms"><span class="rdot" style="background:${col}">${sym}</span><span style="flex:1">${h(m.task)}</span><span class="rdate">${de(m.due)}</span></div>`; }).join("");
+  const risks=p.tasks.filter(d=>d.risk&&d.risk!=="-").sort((a,b)=>{
+    const ra=statusRag(a.status)==="r"?0:1, rb=statusRag(b.status)==="r"?0:1; if(ra!==rb) return ra-rb;
+    const pa=a.prio==="High"?0:a.prio==="Medium"?1:2, pb=b.prio==="High"?0:b.prio==="Medium"?1:2; if(pa!==pb) return pa-pb;
+    return new Date(a.due)-new Date(b.due);
+  }).slice(0,7);
+  const riskRows=risks.length?risks.map(d=>`<div class="rep-risk"><span><b class="pill ${statusClass(d.status)}" style="font-size:9px">${d.tid}</b> ${h(d.risk)}</span><span class="rdate">${de(d.due)}</span></div>`).join("")
+    :'<div class="note">No open risks / issues recorded.</div>';
+  const soon=p.tasks.filter(d=>!statusDone(d.status)).filter(d=>{ const due=new Date(d.due); return due>=TODAY && (due-TODAY)<=30*864e5; }).sort((a,b)=>new Date(a.due)-new Date(b.due));
+  const endTask=cmap[cp.endTid];
+  const cpDelayed=cp.order.filter(t=>cmap[t]&&cmap[t].status==="Overdue").length;
+  return `
+  <div class="rep-actions no-print">
+    <button class="btn" onclick="window.print()">🖨 Print as PDF</button>
+    <button class="btn ghost" onclick="showReport('portfolio')">📄 Portfolio report</button>
+    <span class="note">Tip: choose "Landscape" in the print dialog for more width.</span>
+  </div>
+  <div class="report-doc">
+    <div class="rep-band">
+      <div class="rb-l"><div class="logo">EW</div>
+        <div><h2>Status report · ${h(p.name)}</h2><div class="rb-sub">Eurowings Project Management Cockpit · Trainings Department (TD) · ${h(p.fleet)}</div></div></div>
+      <div class="rb-r"><b>${ht}</b><br>As of 25 Jun 2026 · ${h(p.lead)}</div>
+    </div>
+    <div class="rep-pad">
+      <div class="rep-summary">
+        <div class="pring" style="--p:${s.overall};--c:${hc};width:84px;height:84px"><b style="font-size:18px">${s.overall}%</b></div>
+        <div class="rep-kv">
+          <div class="b"><span>Status</span><b style="color:${hc};font-size:15px">${ht}</b></div>
+          <div class="b"><span>Phase</span><b style="font-size:14px">${h(p.phase)}</b></div>
+          <div class="b"><span>Target date</span><b style="font-size:14px">${de(p.eis)}</b></div>
+          <div class="b"><span>Open</span><b>${s.open}</b></div>
+          <div class="b"><span>Critical</span><b style="color:${s.crit?'var(--red)':'inherit'}">${s.crit}</b></div>
+          <div class="b"><span>Overdue</span><b style="color:${s.r?'var(--red)':'inherit'}">${s.r}</b></div>
+          <div class="b"><span>Milestones</span><b>${s.msDone}/${s.ms}</b></div>
+          <div class="b"><span>Tasks</span><b>${s.n}</b></div>
+        </div>
+      </div>
+      <div class="rep-cols">
+        <div>
+          <div class="rep-sec"><h4>Progress by workstream</h4>${wsRows}</div>
+          <div class="rep-sec" style="margin-top:14px"><h4>Critical path${cpDelayed?` · <span style="color:var(--red)">${cpDelayed} delayed</span>`:""}</h4>
+            <div class="cpchain">${cp.order.map((tid,i)=>(i?'<span class="cparrow">→</span>':'')+`<span class="cpchip">${cmap[tid]?cmap[tid].tid:tid}</span>`).join("")||'<span class="note">—</span>'}</div>
+            <div class="note">Endpoint ${endTask?de(endTask.due):"-"} · delays on this path push the end date.</div>
+          </div>
+        </div>
+        <div>
+          <div class="rep-sec"><h4>Milestones</h4>${msRows||'<span class="note">—</span>'}</div>
+          <div class="rep-sec" style="margin-top:14px"><h4>Top risks &amp; issues</h4>${riskRows}</div>
+          <div class="rep-sec" style="margin-top:14px"><h4>Focus next 30 days (${soon.length})</h4>
+            ${soon.slice(0,5).map(d=>`<div class="rep-ms"><span style="flex:1">${d.tid} · ${h(d.task)}</span><span class="rdate">${de(d.due)}</span></div>`).join("")||'<span class="note">Nothing due in the next 30 days.</span>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function portfolioReportHTML(){
+  const rows=PROJECTS.map(p=>{ const s=projStats(p);
+    const hc={g:"var(--green)",a:"var(--amber)",r:"var(--red)"}[s.health];
+    const ht={g:"On Track",a:"At Risk",r:"Critical"}[s.health];
+    const nm=p.tasks.filter(d=>d.ms==="Yes"&&!statusDone(d.status)).sort((a,b)=>new Date(a.due)-new Date(b.due))[0];
+    return `<tr><td><b>${h(p.name)}</b><br><span class="note">${h(p.fleet)}</span></td>
+      <td><span class="phealth" style="background:${hc}">${ht}</span></td>
+      <td><div class="rtrack" style="width:90px;display:inline-block;vertical-align:middle"><i style="width:${s.overall}%;background:${hc}"></i></div> ${s.overall}%</td>
+      <td style="text-align:center">${s.open}</td>
+      <td style="text-align:center;color:${s.crit?'var(--red)':'inherit'}">${s.crit}</td>
+      <td style="text-align:center">${s.msDone}/${s.ms}</td>
+      <td>${nm?h(nm.task)+' · '+de(nm.due):'—'}</td>
+      <td>${de(p.eis)}</td></tr>`; }).join("");
+  const agg=PROJECTS.reduce((a,p)=>{ const s=projStats(p); a.open+=s.open; a.crit+=s.crit; a.ms+=s.ms; a.msDone+=s.msDone; a.ov+=s.overall; return a; },{open:0,crit:0,ms:0,msDone:0,ov:0});
+  const avg=PROJECTS.length?Math.round(agg.ov/PROJECTS.length):0;
+  return `
+  <div class="rep-actions no-print">
+    <button class="btn" onclick="window.print()">🖨 Print as PDF</button>
+    <button class="btn ghost" onclick="showReport('project')">📄 Project report (${h(PROJECTS[ACTIVE].name)})</button>
+  </div>
+  <div class="report-doc">
+    <div class="rep-band"><div class="rb-l"><div class="logo">EW</div>
+      <div><h2>Portfolio status report</h2><div class="rb-sub">Eurowings Project Management Cockpit · Trainings Department (TD) · ${PROJECTS.length} projects</div></div></div>
+      <div class="rb-r"><b>Avg ${avg}%</b><br>As of 25 Jun 2026 · Chief Training Captain</div></div>
+    <div class="rep-pad">
+      <div class="rep-kv" style="margin-bottom:16px">
+        <div class="b"><span>Projects</span><b>${PROJECTS.length}</b></div>
+        <div class="b"><span>Avg progress</span><b>${avg}%</b></div>
+        <div class="b"><span>Open tasks</span><b>${agg.open}</b></div>
+        <div class="b"><span>Critical tasks</span><b style="color:${agg.crit?'var(--red)':'inherit'}">${agg.crit}</b></div>
+        <div class="b"><span>Milestones</span><b>${agg.msDone}/${agg.ms}</b></div>
+      </div>
+      <table class="rep-table"><thead><tr><th>Project</th><th>Status</th><th>Progress</th><th>Open</th><th>Critical</th><th>MS</th><th>Next milestone</th><th>Target date</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="note" style="margin-top:12px">RAG: Green = On Track · Yellow = At Risk (delays present) · Red = Critical (≥3 delayed or an overdue milestone).</div>
+    </div>
+  </div>`;
+}
+function rebuildProjSel(){
+  document.getElementById("projSel").innerHTML = PROJECTS.map((p,i)=>`<option value="${i}" ${i===ACTIVE?"selected":""}>${h(p.name)}</option>`).join("");
+}
+function rebuildAll(){ rebuildWsFilter(); buildDashboard(); renderTable(); buildGantt(); }
+function openProject(i){ setActive(+i); rebuildProjSel(); rebuildAll(); showView("dash"); }
+
+/* ---------- PROJECT MANAGEMENT ---------- */
+/* ---------- PROJECT TEMPLATES ----------
+   Template task rows are compact: [wsCode, sub, title, prio, milestone(0/1), startWeek, durWeeks, deps].
+   Dates are generated relative to "today" at creation time, statuses start as Not Started / 0 %. */
+const WS_DIFF=[["Concept & Regulatory","REG"],["OM-D Differences","OMD"],["Instructor Standardisation","INS"],["Simulator & Devices","SIM"],["Training Material","TMD"],["Entry Into Service","EIS"]];
+const WS_RECUR=[["Programme Planning","PLAN"],["Regulatory & Compliance","REG"],["Content Update","CON"],["Instructor Briefing","INS"],["Scheduling","SCH"],["Delivery","DEL"],["Records & Compliance","REC"]];
+const WS_ATO=[["Application","APP"],["Gap Analysis","GAP"],["Documentation","DOC"],["Compliance","CMP"],["Authority Liaison","AUTH"],["Approval","APR"]];
+const WS_GEN=[["Initiation","INIT"],["Planning","PLAN"],["Execution","EXE"],["Monitoring & Control","MON"],["Closure","CLO"]];
+
+const TPL_EIS=[
+  ["REG","Concept","Training concept submission to authority","High",0,0,4,"-"],
+  ["REG","Concept","Authority kick-off & approval path","High",0,1,2,"REG-1"],
+  ["REG","Approval","Gap analysis Part-FCL / Part-ORA","High",0,2,4,"REG-1"],
+  ["REG","Approval","Training programme approval","High",1,8,6,"REG-3"],
+  ["OMD","Structure","OM-D gap analysis & chapter structure","High",0,2,4,"-"],
+  ["OMD","Content","Draft OM-D type chapters","Medium",0,6,8,"OMD-1"],
+  ["OMD","Content","OM-D review & release","High",1,14,3,"OMD-2"],
+  ["OMDA","Annex","Define annexes (forms, briefings, records)","Medium",0,8,6,"OMD-2"],
+  ["INS","Planning","Instructor (TRI/SFI) demand planning","High",0,2,3,"-"],
+  ["INS","Selection","Instructor nomination & selection","High",0,5,4,"INS-1"],
+  ["INS","Training","Instructor standardisation training","High",1,16,4,"INS-2"],
+  ["EXM","Planning","TRE demand & authorisation concept","High",0,4,3,"-"],
+  ["EXM","Authorisation","Examiner authorisation by authority","High",0,18,4,"EXM-1"],
+  ["SIM","Strategy","Simulator availability & sourcing","High",0,0,6,"-"],
+  ["SIM","Qualification","FFS qualification & data package","High",0,8,10,"SIM-1"],
+  ["SIM","Readiness","Simulator ready for training","High",1,20,2,"SIM-2"],
+  ["TMD","Planning","Training material inventory & gaps","Medium",0,4,4,"-"],
+  ["TMD","Development","Develop courseware & WBT","Medium",0,10,10,"TMD-1"],
+  ["DOC","Planning","Document map & manual updates","Medium",0,6,8,"-"],
+  ["BOE","Setup","OEM / Boeing programme kick-off","High",0,0,3,"-"],
+  ["BOE","Data","OEM data & licence package","High",0,3,6,"BOE-1"],
+  ["EIS","Readiness","Operational readiness review","High",1,22,2,"REG-4"],
+  ["EIS","Go-Live","Entry Into Service","High",1,24,1,"EIS-1"],
+];
+const TPL_DIFF=[
+  ["REG","Concept","Differences training concept","High",0,0,3,"-"],
+  ["REG","Approval","Authority approval of differences","High",1,6,4,"REG-1"],
+  ["OMD","Content","OM-D differences chapter","High",0,2,5,"REG-1"],
+  ["OMD","Content","OM-D review & release","High",1,9,2,"OMD-1"],
+  ["INS","Briefing","Instructor differences briefing","Medium",0,5,3,"OMD-1"],
+  ["SIM","Devices","Simulator / device differences config","High",0,3,4,"-"],
+  ["SIM","Devices","Device readiness","High",1,8,2,"SIM-1"],
+  ["TMD","Material","Differences material & WBT","Medium",0,4,6,"-"],
+  ["EIS","Readiness","Crew differences rollout plan","Medium",0,10,3,"REG-2"],
+  ["EIS","Go-Live","Differences training go-live","High",1,13,1,"EIS-1"],
+];
+const TPL_RECUR=[
+  ["PLAN","Cycle","Define recurrent cycle & syllabus","High",0,0,3,"-"],
+  ["PLAN","Cycle","Annual training plan approval","High",1,3,2,"PLAN-1"],
+  ["REG","Compliance","Regulatory requirement review","High",0,1,2,"-"],
+  ["CON","Update","Update recurrent content & scenarios","Medium",0,3,4,"PLAN-2"],
+  ["CON","Update","Content QA & release","Medium",1,7,2,"CON-1"],
+  ["INS","Briefing","Instructor standardisation briefing","Medium",0,5,2,"CON-1"],
+  ["SCH","Plan","Crew scheduling & sim slot booking","High",0,4,4,"PLAN-2"],
+  ["DEL","Run","Conduct recurrent sessions","High",0,8,16,"SCH-1"],
+  ["DEL","Run","Training cycle completion","High",1,24,1,"DEL-1"],
+  ["REC","Records","Record results & licence endorsements","Medium",0,8,16,"DEL-1"],
+  ["REC","Compliance","Compliance reporting","Medium",0,24,2,"DEL-2"],
+];
+const TPL_ATO=[
+  ["APP","Submit","Prepare application package","High",0,0,4,"-"],
+  ["APP","Submit","Submit application to authority","High",1,4,1,"APP-1"],
+  ["GAP","Analysis","Regulatory gap analysis","High",0,1,4,"-"],
+  ["DOC","Manuals","Compile manuals & exposition","High",0,2,8,"GAP-1"],
+  ["CMP","System","Compliance-monitoring system setup","Medium",0,4,6,"-"],
+  ["AUTH","Liaison","Authority audit preparation","High",0,8,4,"DOC-1"],
+  ["AUTH","Liaison","Authority audit / inspection","High",1,12,2,"AUTH-1"],
+  ["AUTH","Liaison","Resolve findings","High",0,14,4,"AUTH-2"],
+  ["APR","Grant","Corrective actions accepted","Medium",0,18,3,"AUTH-3"],
+  ["APR","Grant","Approval / certificate granted","High",1,21,2,"APR-1"],
+];
+const TPL_GEN=[
+  ["INIT","Charter","Define project scope & objectives","High",0,0,2,"-"],
+  ["INIT","Charter","Stakeholder alignment & charter sign-off","High",1,2,1,"INIT-1"],
+  ["PLAN","Plan","Work breakdown & schedule","High",0,2,3,"INIT-2"],
+  ["PLAN","Plan","Resource & budget plan","Medium",0,3,2,"INIT-2"],
+  ["PLAN","Plan","Plan baseline approved","High",1,5,1,"PLAN-1"],
+  ["EXE","Build","Execute deliverable – workstream 1","Medium",0,5,8,"PLAN-3"],
+  ["EXE","Build","Execute deliverable – workstream 2","Medium",0,7,8,"PLAN-3"],
+  ["EXE","Build","Key deliverable complete","High",1,15,1,"EXE-1"],
+  ["MON","Control","Quality & risk reviews","Medium",0,5,12,"PLAN-3"],
+  ["MON","Control","Status reporting","Low",0,5,12,"-"],
+  ["CLO","Close","Acceptance & handover","High",0,16,2,"EXE-3"],
+  ["CLO","Close","Project closure & lessons learned","Medium",1,18,1,"CLO-1"],
+];
+const TEMPLATES=[
+  {id:"blank", icon:"📄", name:"Blank project", desc:"Empty project with the standard 10 workstreams. Build everything from scratch.", ws:null, tasks:[]},
+  {id:"eis", icon:"✈️", name:"New Aircraft Type – Entry Into Service", desc:"Full type-rating introduction: regulatory, OM-D, instructors, examiners, simulator, material and EIS milestones.", ws:null, tasks:TPL_EIS},
+  {id:"diff", icon:"🔁", name:"Differences / Conversion Training", desc:"Variant or sub-type differences programme (e.g. CEO→NEO) with a lean workstream set.", ws:WS_DIFF, tasks:TPL_DIFF},
+  {id:"recur", icon:"♻️", name:"Recurrent / Refresher Cycle", desc:"Annual recurrent training cycle: planning, content update, scheduling, delivery and records.", ws:WS_RECUR, tasks:TPL_RECUR},
+  {id:"ato", icon:"🏛️", name:"ATO / Authority Approval", desc:"Regulatory approval project: application, gap analysis, documentation, audit and certificate.", ws:WS_ATO, tasks:TPL_ATO},
+  {id:"generic", icon:"📋", name:"Generic Phased Project", desc:"All-purpose project: Initiation · Planning · Execution · Monitoring · Closure.", ws:WS_GEN, tasks:TPL_GEN},
+];
+function tplCountMs(tpl){ return tpl.tasks.filter(r=>r[4]).length; }
+function tplWsCount(tpl){ return (tpl.ws||WS).length; }
+function tplTasks(rows){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const iso=off=>{ const x=new Date(today); x.setDate(x.getDate()+off); return x.toISOString().slice(0,10); };
+  const noBy={};
+  return rows.map((r,i)=>{ const [ws,sub,title,prio,ms,sw,dw,deps]=r; noBy[ws]=(noBy[ws]||0)+1;
+    return { uid:i, ws, sub:sub||"–", no:noBy[ws], task:title, desc:"", resp:"", support:"",
+      start:iso(sw*7), due:iso((sw+Math.max(dw,1))*7), prio:prio||"Medium", status:"Not Started", pct:0,
+      ms:ms?"Yes":"No", deps:deps||"-", risk:"-", upd:iso(0), comment:"", format:"", revision:"", todos:[] }; });
+}
+function tplTargetDate(tpl){ const today=new Date(); today.setHours(0,0,0,0);
+  let wk=tpl.tasks.reduce((m,r)=>Math.max(m,r[5]+r[6]),0); if(!wk) wk=78;   // ~18 months for a blank project
+  const d=new Date(today); d.setDate(d.getDate()+wk*7); return d.toISOString().slice(0,10); }
+
+let NP_SEL="eis", NP_FORM={}, NP_EDIT=false, NP_DRAFT={ws:[],tasks:[]};
+function newProject(){ NP_SEL="eis"; NP_FORM={}; NP_EDIT=false; loadDraft(); renderNewProject(); }
+// load an editable working copy of the selected template (workstreams + task skeleton)
+function loadDraft(){ const tpl=TEMPLATES.find(t=>t.id===NP_SEL)||TEMPLATES[0];
+  NP_DRAFT={ ws:(tpl.ws||WS).map(w=>[w[0],w[1]]),
+    tasks: tpl.tasks.map(r=>({ws:r[0],sub:r[1]||"",title:r[2],prio:r[3]||"Medium",ms:!!r[4],sw:r[5],dw:r[6],deps:r[7]||"-"})) }; }
+function npCapture(){ const g=id=>{ const e=document.getElementById(id); return e?e.value:undefined; };
+  NP_FORM={ name:g("npName"), fleet:g("npFleet"), lead:g("npLead"), target:g("npTarget") }; }
+function selectTpl(id){ npCapture(); NP_SEL=id; delete NP_FORM.target; loadDraft(); renderNewProject(); }
+function closeNewProject(){ const m=document.getElementById("npModal"); if(m) m.style.display="none"; }
+// live edits from the draft tables write straight into NP_DRAFT (no re-render -> focus stays put)
+function npOnEdit(e){ const el=e.target, dk=el.getAttribute&&el.getAttribute("data-dk"); if(!dk) return;
+  const i=+el.getAttribute("data-di"), f=el.getAttribute("data-df");
+  if(dk==="ws"){ if(NP_DRAFT.ws[i]&&f==="name") NP_DRAFT.ws[i][0]=el.value; }
+  else if(dk==="task"){ const t=NP_DRAFT.tasks[i]; if(!t) return; t[f]= f==="ms"?el.checked:el.value; } }
+function npWsOptions(code){ const codes=NP_DRAFT.ws.map(w=>w[1]);
+  let o=[...NP_DRAFT.ws].sort((a,b)=>alpha(a[0],b[0])).map(([n,c])=>`<option value="${h(c)}" ${c===code?"selected":""}>${h(n)}</option>`).join("");
+  if(code&&!codes.includes(code)) o+=`<option value="${h(code)}" selected>${h(code)} (ext.)</option>`; return o; }
+function npToggleEdit(){ npCapture(); NP_EDIT=!NP_EDIT; renderNewProject(); }
+function npWsAdd(){ npCapture(); const taken=new Set(NP_DRAFT.ws.map(w=>w[1])); NP_DRAFT.ws.push(["New workstream",deriveWsCode("New workstream",taken)]); NP_EDIT=true; renderNewProject(); }
+function npWsDel(i){ npCapture(); NP_DRAFT.ws.splice(i,1); renderNewProject(); }
+function npTaskAdd(){ npCapture(); const ws=(NP_DRAFT.ws[0]&&NP_DRAFT.ws[0][1])||"GEN"; NP_DRAFT.tasks.push({ws,sub:"",title:"New task",prio:"Medium",ms:false,sw:0,dw:2,deps:"-"}); NP_EDIT=true; renderNewProject(); }
+function npTaskDel(i){ npCapture(); NP_DRAFT.tasks.splice(i,1); renderNewProject(); }
+function draftTargetDate(draft){ const today=new Date(); today.setHours(0,0,0,0);
+  let wk=draft.tasks.reduce((m,t)=>Math.max(m,(+t.sw||0)+(+t.dw||1)),0); if(!wk) wk=78;
+  const d=new Date(today); d.setDate(d.getDate()+wk*7); return d.toISOString().slice(0,10); }
+function cleanDraftWs(rows){ const out=[], taken=new Set();
+  rows.forEach(r=>{ let name=String(r[0]||"").trim(), code=String(r[1]||"").trim().toUpperCase();
+    if(!name&&!code) return; if(!name) name=code;
+    if(!code) code=deriveWsCode(name,taken); else { let c=code,k=2; while(taken.has(c)){ c=code+k; k++; } code=c; taken.add(c); }
+    out.push([name,code]); });
+  return out.length?out:WS.map(w=>[w[0],w[1]]); }
+function draftToTasks(draft,wsList){ const today=new Date(); today.setHours(0,0,0,0);
+  const iso=off=>{ const x=new Date(today); x.setDate(x.getDate()+off); return x.toISOString().slice(0,10); };
+  const noBy={}, fallback=(wsList&&wsList[0]&&wsList[0][1])||(draft.ws[0]&&draft.ws[0][1])||"GEN";
+  return draft.tasks.filter(t=>String(t.title||"").trim()||String(t.sub||"").trim()).map((t,i)=>{
+    const ws=t.ws||fallback; noBy[ws]=(noBy[ws]||0)+1;
+    const sw=Math.max(+t.sw||0,0), dw=Math.max(+t.dw||1,1);
+    return { uid:i, ws, sub:String(t.sub||"").trim()||"–", no:noBy[ws], task:String(t.title||"").trim()||"Untitled task",
+      desc:"", resp:"", support:"", start:iso(sw*7), due:iso((sw+dw)*7), prio:t.prio||"Medium", status:"Not Started", pct:0,
+      ms:t.ms?"Yes":"No", deps:String(t.deps||"").trim()||"-", risk:"-", upd:iso(0), comment:"", format:"", revision:"", todos:[] }; }); }
+function renderNewProject(){
+  const tpl=TEMPLATES.find(t=>t.id===NP_SEL)||TEMPLATES[0];
+  const cards=TEMPLATES.map(t=>{ const n=t.tasks.length, ms=tplCountMs(t), wsn=tplWsCount(t);
+    const meta=n?`${n} tasks · ${ms} milestones · ${wsn} workstreams`:`empty · ${wsn} workstreams`;
+    return `<div class="tpl-card ${t.id===NP_SEL?'sel':''}" onclick="selectTpl('${t.id}')">
+      <div class="tpl-ico">${t.icon}</div><div class="tpl-name">${h(t.name)}</div>
+      <div class="tpl-desc">${h(t.desc)}</div><div class="tpl-meta">${meta}</div></div>`; }).join("");
+  const defName=tpl.id==="blank"?"New project":tpl.name;
+  const prev=NP_FORM.name;
+  const nameVal=(prev===undefined||prev===""||prev==="New project"||TEMPLATES.some(t=>t.name===prev))?defName:prev;
+  const fleetVal=NP_FORM.fleet||"";
+  const leadVal=NP_FORM.lead!==undefined?NP_FORM.lead:"Chief Training Captain";
+  const targetVal=NP_FORM.target||draftTargetDate(NP_DRAFT);
+  const wsRows=NP_DRAFT.ws.map(([n,c],i)=>`<tr>
+    <td><input data-dk="ws" data-di="${i}" data-df="name" value="${h(n)}"></td>
+    <td><span class="tpl-meta">${h(c)}</span></td>
+    <td><button class="iconbtn" title="Remove" onclick="npWsDel(${i})">✕</button></td></tr>`).join("");
+  const taskRows=NP_DRAFT.tasks.map((t,i)=>`<tr>
+    <td><select data-dk="task" data-di="${i}" data-df="ws">${npWsOptions(t.ws)}</select></td>
+    <td><input data-dk="task" data-di="${i}" data-df="sub" value="${h(t.sub||"")}"></td>
+    <td><input data-dk="task" data-di="${i}" data-df="title" value="${h(t.title||"")}"></td>
+    <td><select data-dk="task" data-di="${i}" data-df="prio">${optSorted(PRIOS,t.prio||"Medium",false)}</select></td>
+    <td style="text-align:center"><input type="checkbox" data-dk="task" data-di="${i}" data-df="ms" ${t.ms?"checked":""}></td>
+    <td><input class="num" type="number" min="0" data-dk="task" data-di="${i}" data-df="sw" value="${t.sw==null?0:t.sw}"></td>
+    <td><input class="num" type="number" min="1" data-dk="task" data-di="${i}" data-df="dw" value="${t.dw==null?1:t.dw}"></td>
+    <td><input data-dk="task" data-di="${i}" data-df="deps" value="${h(t.deps||"")}"></td>
+    <td><button class="iconbtn" title="Remove" onclick="npTaskDel(${i})">✕</button></td></tr>`).join("");
+  const editor = NP_EDIT ? `<div class="np-edit">
+      <h4>Workstreams (${NP_DRAFT.ws.length})</h4>
+      <table class="np-tbl" style="table-layout:auto"><thead><tr><th>Name</th><th style="width:80px">Code</th><th style="width:34px"></th></tr></thead><tbody>${wsRows||`<tr><td colspan="3" class="note">No workstreams.</td></tr>`}</tbody></table>
+      <button class="btn ghost" style="margin:6px 0 14px" onclick="npWsAdd()">➕ Add workstream</button>
+      <h4>Tasks &amp; milestones (${NP_DRAFT.tasks.length})</h4>
+      <div class="np-scroll"><table class="np-tbl np-min"><thead><tr><th style="width:150px">Workstream</th><th>Sub-Workstream</th><th>Task / Deliverable</th><th style="width:78px">Priority</th><th style="width:34px">MS</th><th style="width:60px">Start wk</th><th style="width:56px">Dur wk</th><th style="width:90px">Depends on</th><th style="width:34px"></th></tr></thead>
+        <tbody>${taskRows||`<tr><td colspan="9" class="note">No tasks yet — add one below.</td></tr>`}</tbody></table></div>
+      <button class="btn ghost" style="margin-top:6px" onclick="npTaskAdd()">➕ Add task</button>
+      <p class="note">“Start wk / Dur wk” are weeks from the project start (today); task IDs use the workstream code. Everything stays editable after creation too.</p>
+    </div>` : "";
+  const html=`<div class="imp-card" style="width:min(940px,96vw);max-height:92vh;display:flex;flex-direction:column">
+    <div class="imp-head"><b>✚ New project</b><button class="iconbtn" onclick="closeNewProject()">✕</button></div>
+    <div class="imp-body" style="overflow:auto">
+      <p class="note" style="margin-top:0">Choose a template, then review &amp; edit its workstreams and tasks before creating. Dates are set relative to today; everything stays editable afterwards.</p>
+      <div class="tpl-grid">${cards}</div>
+      <div class="np-form">
+        <label>Project name<input id="npName" value="${h(nameVal)}"></label>
+        <label>Fleet / type<input id="npFleet" value="${h(fleetVal)}" placeholder="e.g. new aircraft type"></label>
+        <label>Project lead<input id="npLead" value="${h(leadVal)}"></label>
+        <label>Target date<input id="npTarget" type="date" value="${targetVal}"></label>
+      </div>
+      <span class="np-toggle" onclick="npToggleEdit()">${NP_EDIT?"▾":"▸"} Review &amp; edit content · ${NP_DRAFT.tasks.length} tasks · ${NP_DRAFT.ws.length} workstreams</span>
+      ${editor}
+    </div>
+    <div class="imp-foot"><span class="note">Add / rename / remove workstreams &amp; tasks above before creating.</span>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="closeNewProject()">Cancel</button>
+      <button class="btn" onclick="createFromTpl()">Create project</button></div></div>`;
+  let m=document.getElementById("npModal");
+  if(!m){ m=document.createElement("div"); m.id="npModal"; m.className="imp-overlay"; document.body.appendChild(m);
+    m.addEventListener("input",npOnEdit); m.addEventListener("change",npOnEdit); }
+  m.innerHTML=html; m.style.display="flex";
+}
+function createFromTpl(){
+  const name=(document.getElementById("npName").value||"New project").trim()||"New project";
+  const fleet=(document.getElementById("npFleet").value||"").trim()||"–";
+  const lead=(document.getElementById("npLead").value||"").trim()||"Chief Training Captain";
+  const ws=cleanDraftWs(NP_DRAFT.ws);
+  const target=document.getElementById("npTarget").value||draftTargetDate(NP_DRAFT);
+  const proj={ id:"p-"+Date.now(), name, fleet, lead, phase:"Planning", eis:target, ws, tasks:draftToTasks(NP_DRAFT,ws) };
+  PROJECTS.push(proj); recomputeProject(proj);
+  save(); closeNewProject(); openProject(PROJECTS.length-1);
+}
+function renameProject(i){
+  const p=PROJECTS[i];
+  const name=prompt("Project name:",p.name); if(name===null) return; if(name) p.name=name;
+  const fleet=prompt("Fleet / type:",p.fleet); if(fleet!==null) p.fleet=fleet;
+  save(); rebuildProjSel(); renderPortfolio(); if(i===ACTIVE) updateHeader();
+}
+function deleteProject(i){
+  if(PROJECTS.length<=1){ alert("At least one project must remain."); return; }
+  if(!confirm("Really delete this project?\n\n"+PROJECTS[i].name)) return;
+  PROJECTS.splice(i,1); if(ACTIVE>=PROJECTS.length) ACTIVE=PROJECTS.length-1;
+  setActive(ACTIVE); save(); rebuildProjSel(); rebuildAll(); renderPortfolio();
+}
+
+/* ---------- PORTFOLIO RENDER ---------- */
+function renderPortfolio(){
+  const agg={open:0,crit:0,ms:0,msDone:0,overall:0,active:0};
+  PROJECTS.forEach(p=>{ const s=projStats(p); agg.open+=s.open; agg.crit+=s.crit; agg.ms+=s.ms; agg.msDone+=s.msDone; agg.overall+=s.overall; if(p.phase!=="Completed") agg.active++; });
+  const avg=PROJECTS.length?Math.round(agg.overall/PROJECTS.length):0;
+  document.getElementById("portfolioKpis").innerHTML=[
+    kpi("Projects",PROJECTS.length,`${agg.active} active`),
+    kpi("Open tasks",agg.open,"across all projects"),
+    kpi("Critical tasks",agg.crit,"delayed + high-prio open",agg.crit>0?"red":""),
+    kpi("Milestones",`${agg.msDone}/${agg.ms}`,"reached / total"),
+    kpi("Avg progress",avg+"%","mean across projects"),
+    `<div class="kpi accent"><div class="lbl">Portfolio</div><div class="val">${avg}%</div><div class="foot">overall progress across all projects</div></div>`
+  ].join("");
+  document.getElementById("portfolioGrid").innerHTML = PROJECTS.map((p,i)=>{
+    const s=projStats(p);
+    const hc={g:"var(--green)",a:"var(--amber)",r:"var(--red)"}[s.health];
+    const ht={g:"On Track",a:"At Risk",r:"Critical"}[s.health];
+    const tot=Math.max(s.g+s.b+s.a+s.r,1);
+    const seg=(c,cls)=>c?`<span class="d ${cls}" style="flex:${c}"></span>`:"";
+    return `<div class="pcard">
+      <div class="pcard-top" style="--hc:${hc}">
+        <div><div class="pcard-fleet">${h(p.fleet)}</div><div class="pcard-name">${h(p.name)}</div></div>
+        <span class="phealth" style="background:${hc}">${ht}</span></div>
+      <div class="pcard-ring"><div class="pring" style="--p:${s.overall};--c:${hc}"><b>${s.overall}%</b></div>
+        <div class="pcard-meta">
+          <div><span>Project Lead</span><b>${h(p.lead)}</b></div>
+          <div><span>Phase</span><b>${h(p.phase)}</b></div>
+          <div><span>Target date</span><b>${de(p.eis)}</b></div></div></div>
+      <div class="pcard-stats">
+        <div><b>${s.open}</b><span>open</span></div>
+        <div><b style="color:${s.crit?'var(--red)':'inherit'}">${s.crit}</b><span>critical</span></div>
+        <div><b>${s.msDone}/${s.ms}</b><span>milest.</span></div>
+        <div><b>${s.n}</b><span>tasks</span></div></div>
+      <div class="pbar"><i style="width:${s.overall}%;background:${hc}"></i></div>
+      <div class="pcard-tl" title="Green ${s.g} · Blue ${s.b} · Yellow ${s.a} · Red ${s.r}">${seg(s.g,"g")}${seg(s.b,"b")}${seg(s.a,"a")}${seg(s.r,"r")}</div>
+      <div class="pcard-act"><button class="btn" onclick="openProject(${i})">Open project →</button>
+        <button class="iconbtn" onclick="renameProject(${i})" title="Edit">✎</button>
+        <button class="iconbtn" onclick="deleteProject(${i})" title="Delete">✕</button></div>
+    </div>`;
+  }).join("") + `<div class="pcard pcard-new" onclick="newProject()"><div class="plus">＋</div><div>Create new project</div></div>`;
+}
+
+/* ---------- DASHBOARD ---------- */
+function buildDashboard(){
+  const total=DATA.length;
+  const done=DATA.filter(d=>statusDone(d.status)).length;
+  const open=total-done;
+  const crit=DATA.filter(d=>d.status==="Overdue" || (d.prio==="High" && !statusDone(d.status))).length;
+  const delayed=DATA.filter(d=>d.status==="Overdue").length;
+  const ms=DATA.filter(d=>d.ms==="Yes");
+  const msDone=ms.filter(d=>statusDone(d.status)).length;
+  const overall=Math.round(DATA.reduce((a,d)=>a+d.pct,0)/total);
+
+  document.getElementById("kpis").innerHTML = [
+    kpi("Open tasks",open,`of ${total} total · ${done} done`),
+    kpi("Critical tasks",crit,`${delayed} overdue · high-prio open`,crit>0?"red":""),
+    kpi("Milestones",`${msDone}/${ms.length}`,"programme milestones reached"),
+    kpi("Overdue",delayed,"past due date",delayed>0?"red":""),
+    kpi("High priority total",DATA.filter(d=>d.prio==="High").length,"strategic / critical path"),
+    `<div class="kpi accent"><div class="ring" style="--p:${overall}"><b>${overall}%</b></div>
+       <div class="lbl">Overall progress</div><div class="val">${overall}%</div>
+       <div class="foot">average progress across all tasks</div></div>`
+  ].join("");
+
+  // workstream progress
+  document.getElementById("wsProgress").innerHTML = wsCodes(PROJECTS[ACTIVE]).map(([name,abbr])=>{
+    const items=DATA.filter(d=>d.ws===abbr);
+    const p=Math.round(items.reduce((a,d)=>a+d.pct,0)/items.length);
+    return `<div class="wsrow"><div class="name" title="${name}">${name}</div>
+      <div class="track"><div class="fill" style="width:${p}%"></div></div>
+      <div class="pct">${p}%</div></div>`;
+  }).join("");
+
+  // traffic light (RAG buckets)
+  const g=DATA.filter(d=>statusRag(d.status)==="g").length;
+  const b=DATA.filter(d=>statusRag(d.status)==="b").length;
+  const a=DATA.filter(d=>statusRag(d.status)==="a").length;
+  const r=DATA.filter(d=>statusRag(d.status)==="r").length;
+  const na=DATA.filter(d=>statusRag(d.status)==="x").length;
+  document.getElementById("traffic").innerHTML = `
+    <div class="tl g"><b>${g}</b><span>Done</span></div>
+    <div class="tl b" style="background:var(--blue)"><b>${b}</b><span>In Progress / Review</span></div>
+    <div class="tl a"><b>${a}</b><span>Not Started / On Hold</span></div>
+    <div class="tl r"><b>${r}</b><span>Overdue</span></div>
+    ${na?`<div class="tl b" style="background:var(--grey)"><b>${na}</b><span>Not Applicable</span></div>`:""}`;
+
+  // workload per person (by owner)
+  const byPerson={};
+  DATA.forEach(d=>{ const name=(d.resp||"").trim()||"— unassigned —";
+    const w=byPerson[name] || (byPerson[name]={name,total:0,open:0,overdue:0,pctSum:0});
+    w.total++; w.pctSum+=d.pct; if(!statusDone(d.status)) w.open++; if(d.status==="Overdue") w.overdue++; });
+  const people=Object.values(byPerson).sort((x,y)=>y.open-x.open || y.total-x.total);
+  const maxTotal=Math.max(1,...people.map(p=>p.total));
+  document.getElementById("workload").innerHTML = people.length ? people.map(p=>{
+    const avg=Math.round(p.pctSum/p.total), barW=Math.round(p.total/maxTotal*100);
+    const od=p.overdue?` · <span style="color:var(--red)">${p.overdue} overdue</span>`:"";
+    return `<div class="wsrow"><div class="name" title="${h(p.name)}">${h(p.name)}</div>
+      <div class="track" title="${p.total} tasks"><div class="fill" style="width:${barW}%;background:${p.overdue?'var(--red)':'var(--ew-magenta)'}"></div></div>
+      <div class="pct" style="min-width:160px;text-align:left">${p.open}/${p.total} open${od} · ${avg}%</div></div>`;
+  }).join("") : '<div class="note">No owners assigned yet.</div>';
+
+  // milestones
+  document.getElementById("milestones").innerHTML = ms
+    .sort((x,y)=>new Date(x.due)-new Date(y.due))
+    .map(m=>{
+      const st=m.status, c=statusClass(st), rag=statusRag(st);
+      const ico = rag==="g"?"var(--green)": rag==="r"?"var(--red)": rag==="b"?"var(--blue)":"var(--grey)";
+      const sym = statusDone(st)?"✓": rag==="r"?"!":"◆";
+      return `<div class="ms"><div class="ico" style="background:${ico}">${sym}</div>
+        <div class="mtxt"><b>${m.task}</b><small>${wsName(m.ws)} · Target: ${de(m.due)} · ${m.tid}</small></div>
+        <span class="badge ${c}">${st}</span></div>`;
+    }).join("");
+
+  // critical path
+  const cp=criticalPath(DATA);
+  const cmap=Object.fromEntries(DATA.map(t=>[normId(t.tid),t]));
+  const endTask=cmap[cp.endTid];
+  document.getElementById("cpCard").innerHTML = `
+    <h3><span class="dot" style="background:var(--red)"></span>Critical path
+      <span style="font-weight:500;color:var(--muted);font-size:12px">· ${cp.order.length} tasks · endpoint ${endTask?de(endTask.due):"-"}</span></h3>
+    <div class="cpchain">${cp.order.map((tid,i)=>{const t=cmap[tid];
+      return (i?'<span class="cparrow">→</span>':'')+`<span class="cpchip" title="${h(t?t.task:'')}">${t?t.tid:tid}</span>`;}).join("")||'<span class="note">No dependencies defined.</span>'}</div>
+    <div class="note">Binding dependency chain to the latest milestone. Delays on this path push the project end date directly.</div>`;
+}
+function kpi(lbl,val,foot,color){
+  const vc = color==="red" ? "style='color:var(--red)'":"";
+  return `<div class="kpi"><div class="lbl">${lbl}</div><div class="val" ${vc}>${val}</div><div class="foot">${foot}</div></div>`;
+}
+
+/* ---------- TABLE ---------- */
+const fWs=document.getElementById("fWs");
+function rebuildWsFilter(){
+  const opts=`<option value="">All workstreams</option>`+[...wsCodes(PROJECTS[ACTIVE])].sort((a,b)=>alpha(a[0],b[0])).map(([n,a])=>`<option value="${a}">${h(n)}</option>`).join("");
+  [fWs, document.getElementById("tdWs")].forEach(sel=>{ if(!sel) return; const cur=sel.value;
+    sel.innerHTML=opts; if([...sel.options].some(o=>o.value===cur)) sel.value=cur; }); }
+(function(){ const fs=document.getElementById("fStatus");
+  fs.innerHTML=`<option value="">All statuses</option>`+[...STATUSES].sort(alpha).map(s=>`<option>${s}</option>`).join(""); })();
+["fWs","fStatus","fPrio","fSearch","fMs","fCp"].forEach(id=>document.getElementById(id).addEventListener("input",renderTable));
+
+function currentRows(){
+  const ws=fWs.value, st=document.getElementById("fStatus").value, pr=document.getElementById("fPrio").value;
+  const q=document.getElementById("fSearch").value.toLowerCase(), onlyMs=document.getElementById("fMs").checked;
+  const onlyCp=document.getElementById("fCp").checked, cp=onlyCp?criticalPath(DATA).set:null;
+  return DATA.filter(d=>(!ws||d.ws===ws)&&(!st||d.status===st)&&(!pr||d.prio===pr)
+    &&(!onlyMs||d.ms==="Yes")&&(!onlyCp||cp.has(normId(d.tid)))
+    &&(!q||(d.task+d.resp+d.desc+d.tid).toLowerCase().includes(q)));
+}
+function renderTable(){
+  const rows=currentRows(), cp=criticalPath(DATA).set;
+  document.getElementById("tbody").innerHTML = rows.map(d=>`
+    <tr class="${d.ms==="Yes"?"msrow":""} ${cp.has(normId(d.tid))?"critrow":""}" data-uid="${d.uid}">
+      <td><select class="cell-input wsedit" data-field="ws">${wsOpt(d.ws)}</select></td>
+      <td>${mgSelect("sub",d.sub)}</td>
+      <td class="tid">${cp.has(normId(d.tid))?'<span class="critflag" title="Critical path">⚠</span>':''}${d.tid}</td>
+      <td class="tk"><div class="ce" contenteditable data-field="task">${h(d.task)}</div></td>
+      <td class="desc"><div class="ce" contenteditable data-field="desc">${h(d.desc)}</div></td>
+      <td>${mgSelect("resp",d.resp)}</td>
+      <td>${mgSelect("support",d.support)}</td>
+      <td><input type="date" class="cell-input cell-date" data-field="start" value="${d.start}"></td>
+      <td><input type="date" class="cell-input cell-date" data-field="due" value="${d.due}"></td>
+      <td style="text-align:center" class="durcell">${d.dur}</td>
+      <td><select class="cell-input pill ${prioClass(d.prio)}" data-field="prio">${optSorted(PRIOS,d.prio)}</select></td>
+      <td><select class="cell-input pill ${statusClass(d.status)}" data-field="status">${optSorted(STATUSES,d.status)}</select></td>
+      <td><div class="pillbar">${(d.todos&&d.todos.length)
+          ? `<span class="cell-num pct-auto" title="Auto from to-dos (${d.todos.filter(t=>t.done).length}/${d.todos.length})">☑${d.pct}</span>`
+          : `<input type="number" min="0" max="100" step="5" class="cell-input cell-num" data-field="pct" value="${d.pct}">`
+        }<div class="mini" style="flex:1"><i style="width:${d.pct}%"></i></div></div></td>
+      <td style="text-align:center"><select class="cell-input msedit" data-field="ms">${optSorted(["Yes","No"],d.ms)}</select></td>
+      <td><div class="ce" contenteditable data-field="deps">${h(d.deps)}</div></td>
+      <td class="${d.risk&&d.risk!=="-"?"risk":""}"><div class="ce" contenteditable data-field="risk">${h(d.risk)}</div></td>
+      <td>${mgSelect("format",d.format)}</td>
+      <td><div class="ce" contenteditable data-field="revision">${h(d.revision)}</div></td>
+      <td><input type="date" class="cell-input cell-date" data-field="upd" value="${d.upd}"></td>
+      <td><div class="ce" contenteditable data-field="comment">${h(d.comment)}</div></td>
+      <td><div class="rowact"><button class="iconbtn" data-act="dup" title="Duplicate">⧉</button><button class="iconbtn" data-act="del" title="Delete">✕</button></div></td>
+    </tr>`).join("");
+  document.getElementById("rowcount").textContent = `${rows.length} of ${DATA.length} tasks shown`;
+}
+
+/* ---------- CSV EXPORT ---------- */
+function exportCSV(){
+  const head=["Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner",
+    "Supporting departments","Start date","Due Date","Duration (days)","Priority","Status","% Completion",
+    "Milestone","Dependencies","Risks / Issues","Format","Revision","Last update","Comment"];
+  const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const rows=currentRows().map(d=>[wsName(d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),
+    d.dur,d.prio,d.status,d.pct+"%",d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment].map(esc).join(";"));
+  const csv="﻿"+[head.map(esc).join(";"),...rows,"",esc(COPYRIGHT)].join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  const fn=((PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].name)||"Project").replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"");
+  a.download="Eurowings_"+fn+"_Tasks.csv";
+  a.click();
+}
+
+/* ---------- DOWNLOAD / BACKUP / XLSX (ohne externe Bibliothek) ---------- */
+function download(data,name,mime){
+  const blob = data instanceof Blob ? data : new Blob([data],{type:mime||"application/octet-stream"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },600);
+}
+function exportBackup(){
+  const data=JSON.stringify({app:"ew-pm-portfolio",version:1,exported:TODAY_ISO,
+    active:PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].id,projects:PROJECTS},null,2);
+  download(new Blob([data],{type:"application/json"}),"Eurowings_PM_Backup_"+TODAY_ISO+".json");
+}
+function importBackup(input){
+  const file=input.files&&input.files[0]; if(!file){ return; }
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const o=JSON.parse(r.result);
+      const projs=Array.isArray(o)?o:(o&&o.projects);
+      if(!projs||!projs.length) throw new Error("No projects found in the file.");
+      if(!confirm(`Load backup with ${projs.length} project(s)?\nThe current portfolio will be replaced.`)){ input.value=""; return; }
+      projs.forEach((p,i)=>{ if(!Array.isArray(p.tasks)) p.tasks=[]; if(!p.id) p.id="p-imp-"+i;
+        p.tasks.forEach((d,j)=>{ if(d.uid==null) d.uid=j; }); });
+      PROJECTS=projs; PROJECTS.forEach(recomputeProject);
+      const idx=PROJECTS.findIndex(p=>p.id===(o&&o.active));
+      setActive(idx>=0?idx:0); save(); rebuildProjSel(); rebuildAll(); showView("portfolio");
+      alert("Backup loaded: "+PROJECTS.length+" project(s).");
+    }catch(e){ alert("Could not load backup:\n"+e.message); }
+    input.value="";
+  };
+  r.readAsText(file);
+}
+// --- minimal XLSX (OOXML) writer ---
+const _enc=new TextEncoder();
+const strBytes=s=>_enc.encode(s);
+const CRC_TBL=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_TBL[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipStore(files){
+  const u16=n=>[n&255,(n>>8)&255], u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>24)&255];
+  const locals=[], central=[]; let offset=0;
+  files.forEach(f=>{
+    const nm=strBytes(f.name), crc=crc32(f.bytes), sz=f.bytes.length;
+    const lh=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(sz),u32(sz),u16(nm.length),u16(0));
+    const la=new Uint8Array(lh.length+nm.length+sz); la.set(lh,0); la.set(nm,lh.length); la.set(f.bytes,lh.length+nm.length);
+    locals.push(la);
+    const ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(sz),u32(sz),u16(nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset));
+    const ca=new Uint8Array(ch.length+nm.length); ca.set(ch,0); ca.set(nm,ch.length);
+    central.push(ca); offset+=la.length;
+  });
+  const cSize=central.reduce((a,c)=>a+c.length,0), cOff=offset;
+  const eocd=new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cSize),u32(cOff),u16(0)));
+  const parts=[...locals,...central,eocd], total=parts.reduce((a,p)=>a+p.length,0);
+  const out=new Uint8Array(total); let pos=0; parts.forEach(p=>{out.set(p,pos);pos+=p.length;});
+  return out;
+}
+const xesc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function colL(i){let s="";i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
+const STYLES_XML=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF871C54"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+function sheetXml(rows){
+  let body="";
+  rows.forEach((row,ri)=>{ const r=ri+1, head=ri===0; let cells="";
+    row.forEach((val,ci)=>{ const ref=colL(ci)+r, st=head?' s="1"':'';
+      if(!head && typeof val==="number" && isFinite(val)) cells+=`<c r="${ref}"${st}><v>${val}</v></c>`;
+      else cells+=`<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xesc(val)}</t></is></c>`;
+    });
+    body+=`<row r="${r}">${cells}</row>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${body}</sheetData></worksheet>`;
+}
+function buildXlsx(sheets){
+  const files=[];
+  files.push({name:"[Content_Types].xml",bytes:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`)});
+  files.push({name:"_rels/.rels",bytes:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`)});
+  files.push({name:"xl/workbook.xml",bytes:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${xesc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets></workbook>`)});
+  files.push({name:"xl/_rels/workbook.xml.rels",bytes:strBytes(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`)});
+  files.push({name:"xl/styles.xml",bytes:strBytes(STYLES_XML)});
+  sheets.forEach((s,i)=>files.push({name:`xl/worksheets/sheet${i+1}.xml`,bytes:strBytes(sheetXml(s.rows))}));
+  return zipStore(files);
+}
+function sheetNames(names){ const seen={}, out=[]; names.forEach(n=>{ let b=String(n||"Sheet").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,28)||"Sheet";
+  let nm=b,k=2; while(seen[nm.toLowerCase()]){ nm=b.slice(0,28-(""+k).length-1)+" "+k; k++; } seen[nm.toLowerCase()]=1; out.push(nm); }); return out; }
+const TASK_HEAD=["Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner","Supporting departments","Start date","Due Date","Duration (days)","Priority","Status","% Completion","Milestone","Dependencies","Risks / Issues","Format","Revision","Last update","Comment"];
+function projectRows(p){ const rows=[TASK_HEAD.slice()];
+  p.tasks.forEach(d=>rows.push([wsNameFor(p,d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),d.dur,d.prio,d.status,d.pct,d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment]));
+  return rows; }
+function summaryRows(){ const rows=[["Project","Fleet","Project Lead","Phase","Target date","Tasks","Open","Critical","Overdue","MS reached","MS total","Overall progress %","Status"]];
+  PROJECTS.forEach(p=>{ const s=projStats(p), ht={g:"On Track",a:"At Risk",r:"Critical"}[s.health];
+    rows.push([p.name,p.fleet,p.lead,p.phase,de(p.eis),s.n,s.open,s.crit,s.r,s.msDone,s.ms,s.overall,ht]); });
+  return rows; }
+const fnSafe=s=>String(s||"Project").replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"");
+const withCopyright = rows => [...rows, [], [COPYRIGHT]];   // append a copyright row to each sheet
+function exportXLSXPortfolio(){
+  const names=sheetNames(["Portfolio",...PROJECTS.map(p=>p.name)]);
+  const sheets=[{name:names[0],rows:withCopyright(summaryRows())},...PROJECTS.map((p,i)=>({name:names[i+1],rows:withCopyright(projectRows(p))}))];
+  download(buildXlsx(sheets),"Eurowings_Training-Portfolio.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
+function exportXLSXProject(p){
+  download(buildXlsx([{name:sheetNames([p.name])[0],rows:withCopyright(projectRows(p))}]),"Eurowings_"+fnSafe(p.name)+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
+
+/* ---------- EXCEL / CSV IMPORT ---------- */
+let IMP={sheets:[],si:0};
+const IMPORT_FIELDS=[
+  ["task","Task / Deliverable *"],["ws","Workstream"],["sub","Sub-Workstream"],["desc","Description"],
+  ["resp","Owner"],["support","Supporting departments"],["start","Start date"],["due","Due Date"],
+  ["prio","Priority"],["status","Status"],["pct","% Completion"],["ms","Milestone"],
+  ["deps","Dependencies"],["risk","Risks / Issues"],["format","Format"],["revision","Revision"],
+  ["upd","Last update"],["comment","Comment"]
+];
+const SYN={
+  task:["task / deliverable","task/deliverable","aufgabe / deliverable","aufgabe/deliverable","aufgabe","deliverable","task","tätigkeit","taetigkeit","activity","titel","title","maßnahme","massnahme","thema","dokument","document"],
+  ws:["workstream","work stream","arbeitspaket","arbeitspaket beschreibung","bereich","stream","kategorie","modul","gewerk","course","kurs","chapter group"],
+  sub:["sub-workstream","sub workstream","om-d reference","om-d ref","omd reference","reference","ref","chapter","kapitel","unterbereich","teilbereich","subkategorie","sub","section","abschnitt"],
+  desc:["beschreibung","description","details","detail","inhalt","scope","content"],
+  resp:["verantwortlich","verantwortlicher","responsible","owner","zuständig","zustaendig","lead","bearbeiter","changed by","geändert von","geaendert von","author","autor","editor","assignee"],
+  support:["unterstützend","unterstuetzend","unterstützende","support","supporting","mitwirkende","beteiligte","accountable","consulted","informed"],
+  start:["start","startdatum","beginn","von","start date","startdate","anfang","planned start","geplanter start"],
+  due:["due","due date","duedate","fällig","faellig","enddatum","ende","bis","deadline","termin","zieldatum","ziel","target","target date","soll"],
+  prio:["priorität","prioritaet","priority","prio","wichtigkeit"],
+  status:["status","state","zustand","fortschritt status"],
+  pct:["%","completion","fortschritt","prozent","progress","fertigstellung","compl"],
+  ms:["milestone","meilenstein"],
+  deps:["abhängigkeit","abhaengigkeit","abhängigkeiten","dependencies","dependency","predecessor","vorgänger","vorgaenger"],
+  risk:["risiko","risiken","issue","issues","risk","problem"],
+  format:["format","dateiformat","file format","medium","media type","typ","type","art"],
+  revision:["revision","rev","version","revision no","rev no","revisionsstand","stand version","ausgabe","edition"],
+  upd:["letztes update","last update","aktualisiert","updated","stand","änderungsdatum","revision date","rev date","revisionsdatum"],
+  comment:["kommentar","comment","bemerkung","notiz","notes","anmerkung","info","filename","storage","filename/storage","remark"]
+};
+
+// --- file readers ---
+async function inflateRaw(bytes){
+  if(typeof DecompressionStream==="undefined") throw new Error("This browser cannot unzip .xlsx files. Please save the list as CSV and import again.");
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function unzip(buf){
+  const b=new Uint8Array(buf), dv=new DataView(b.buffer);
+  let eo=-1; for(let i=b.length-22;i>=0;i--){ if(dv.getUint32(i,true)===0x06054b50){ eo=i; break; } }
+  if(eo<0) throw new Error("Not a valid Excel file (no ZIP). It may be the old .xls format – please save as .xlsx or .csv.");
+  const count=dv.getUint16(eo+10,true), cdOff=dv.getUint32(eo+16,true);
+  const files={}; let p=cdOff;
+  for(let n=0;n<count;n++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    const method=dv.getUint16(p+10,true), compSize=dv.getUint32(p+20,true);
+    const nameLen=dv.getUint16(p+28,true), extraLen=dv.getUint16(p+30,true), commLen=dv.getUint16(p+32,true);
+    const lhOff=dv.getUint32(p+42,true);
+    const name=new TextDecoder().decode(b.subarray(p+46,p+46+nameLen));
+    const lNameLen=dv.getUint16(lhOff+26,true), lExtra=dv.getUint16(lhOff+28,true);
+    const dataStart=lhOff+30+lNameLen+lExtra;
+    files[name]={method,comp:b.subarray(dataStart,dataStart+compSize)};
+    p+=46+nameLen+extraLen+commLen;
+  }
+  return files;
+}
+async function readEntry(files,name){ const f=files[name]; if(!f) return null;
+  if(f.method===0) return new TextDecoder().decode(f.comp);
+  if(f.method===8) return new TextDecoder().decode(await inflateRaw(f.comp));
+  throw new Error("Unsupported compression in the file."); }
+function excelToISO(n){ const ms=Math.round((n-25569)*86400*1000); const d=new Date(ms); return isNaN(d)?String(n):d.toISOString().slice(0,10); }
+function colNum(ref){ const m=/^([A-Z]+)/.exec(ref||""); if(!m) return 0; let n=0; for(const ch of m[1]) n=n*26+(ch.charCodeAt(0)-64); return n-1; }
+const _tags=(el,name)=>el.getElementsByTagName(name);   // namespace-tolerant (localName)
+function parseSheetXml(xml,ss,dateXf){
+  const doc=new DOMParser().parseFromString(xml,"application/xml"); const rows=[];
+  const rowEls=doc.getElementsByTagName("row");
+  for(const row of rowEls){
+    const arr=[]; let auto=0;
+    for(const c of row.getElementsByTagName("c")){
+      const ref=c.getAttribute("r"); const ci=ref?colNum(ref):auto; auto=ci+1;
+      const t=c.getAttribute("t"), s=c.getAttribute("s"); let val="";
+      if(t==="s"){ const v=_tags(c,"v")[0]; val=v?(ss[+v.textContent]||""):""; }
+      else if(t==="inlineStr"){ let x=""; for(const tt of _tags(c,"t")) x+=tt.textContent; val=x; }
+      else if(t==="str"){ const v=_tags(c,"v")[0]; val=v?v.textContent:""; }
+      else if(t==="b"){ const v=_tags(c,"v")[0]; val=v&&v.textContent==="1"?"Yes":"No"; }
+      else { const v=_tags(c,"v")[0]; if(v){ const num=parseFloat(v.textContent); val=(s!=null&&dateXf.has(+s)&&isFinite(num))?excelToISO(num):v.textContent; } }
+      arr[ci]=val;
+    }
+    rows.push(arr);
+  }
+  const w=rows.reduce((m,r)=>Math.max(m,r.length),0);
+  rows.forEach(r=>{ for(let i=0;i<w;i++) if(r[i]==null) r[i]=""; });
+  return rows;
+}
+async function parseXlsx(buf){
+  const files=await unzip(buf);
+  const ss=[]; const ssXml=await readEntry(files,"xl/sharedStrings.xml");
+  if(ssXml){ const sd=new DOMParser().parseFromString(ssXml,"application/xml");
+    for(const si of sd.getElementsByTagName("si")){ let s=""; for(const t of _tags(si,"t")) s+=t.textContent; ss.push(s); } }
+  const dateXf=new Set(); const stXml=await readEntry(files,"xl/styles.xml");
+  if(stXml){ const sd=new DOMParser().parseFromString(stXml,"application/xml"); const nf={};
+    for(const n of sd.getElementsByTagName("numFmt")) nf[n.getAttribute("numFmtId")]=n.getAttribute("formatCode")||"";
+    const isDate=(id,code)=>{ id=+id; if([14,15,16,17,18,19,20,21,22,27,28,29,30,31,32,33,34,35,36,45,46,47,50,51,52,53,54,55,56,57,58].includes(id)) return true; return !!(code&&/[dmyhs]/i.test(code)&&!/[#0%]/.test(code)); };
+    const cx=sd.getElementsByTagName("cellXfs")[0]; const xfs=cx?cx.getElementsByTagName("xf"):[];
+    for(let i=0;i<xfs.length;i++){ const id=xfs[i].getAttribute("numFmtId"); if(id!=null&&isDate(id,nf[id])) dateXf.add(i); } }
+  const rels={}; const relXml=await readEntry(files,"xl/_rels/workbook.xml.rels");
+  if(relXml){ const rd=new DOMParser().parseFromString(relXml,"application/xml");
+    for(const r of rd.getElementsByTagName("Relationship")) rels[r.getAttribute("Id")]=r.getAttribute("Target"); }
+  const sheets=[]; const wbXml=await readEntry(files,"xl/workbook.xml");
+  if(wbXml){ const wd=new DOMParser().parseFromString(wbXml,"application/xml");
+    for(const sh of wd.getElementsByTagName("sheet")){
+      const rid=sh.getAttribute("r:id")||sh.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id");
+      let target=rels[rid]||""; target = target.startsWith("/") ? target.slice(1) : (/^xl\//.test(target)?target:"xl/"+target);
+      sheets.push({name:sh.getAttribute("name")||"Tabelle",target}); } }
+  if(!sheets.length) sheets.push({name:"Tabelle1",target:"xl/worksheets/sheet1.xml"});
+  const out=[];
+  for(const sh of sheets){ const xml=await readEntry(files,sh.target); if(xml) out.push({name:sh.name,rows:parseSheetXml(xml,ss,dateXf)}); }
+  return out;
+}
+function parseCSV(text,delim){
+  text=text.replace(/^﻿/,""); const rows=[]; let row=[],cell="",q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch=='"'){ if(text[i+1]=='"'){cell+='"';i++;} else q=false; } else cell+=ch; }
+    else if(ch=='"') q=true;
+    else if(ch===delim){ row.push(cell); cell=""; }
+    else if(ch=='\n'){ row.push(cell); rows.push(row); row=[]; cell=""; }
+    else if(ch!='\r') cell+=ch;
+  }
+  if(cell.length||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+async function readSpreadsheet(file){
+  const name=file.name.toLowerCase();
+  if(name.endsWith(".csv")){ const text=await file.text(); const first=text.replace(/^﻿/,"").split(/\r?\n/)[0]||"";
+    const delim=(first.split(";").length>first.split(",").length)?";":(first.indexOf("\t")>=0&&first.indexOf(",")<0?"\t":","); return [{name:file.name,rows:parseCSV(text,delim)}]; }
+  if(name.endsWith(".xls")&&!name.endsWith(".xlsx")) throw new Error("The old .xls format is not supported. Please save as .xlsx or .csv in Excel.");
+  return await parseXlsx(await file.arrayBuffer());
+}
+
+// --- normalizers ---
+function normWS(v,def){ if(!v) return def; const s=String(v).trim();
+  const a=WS.find(w=>w[1].toLowerCase()===s.toLowerCase()); if(a) return a[1];
+  const n=WS.find(w=>w[0].toLowerCase()===s.toLowerCase()||w[0].toLowerCase().includes(s.toLowerCase())||s.toLowerCase().includes(w[0].toLowerCase())); if(n) return n[1];
+  return s.slice(0,24); }
+function normStatus(v,pct){ const s=String(v||"").toLowerCase().trim();
+  if(/(not applicable|n\/a|^na$|entfällt|entfaellt|nicht zutreffend|nicht anwendbar)/.test(s)) return "Not Applicable";
+  if(/(approved|genehmigt|freigegeben|abgenommen)/.test(s)) return "Approved";
+  if(/(overdue|verzög|verzoeg|delay|überfäll|ueberfaell)/.test(s)) return "Overdue";
+  if(/(on hold|on-hold|hold|angehalten|pausiert|zurückgestellt|zurueckgestellt)/.test(s)) return "On Hold";
+  if(/(needs review|in review|review|prüfung|pruefung|zur prüfung|zur pruefung|to review)/.test(s)) return "Needs Review";
+  if(/(in progress|in arbeit|in bearbeitung|laufend|ongoing|wip|begonnen|started)/.test(s)) return "In Progress";
+  if(/(abgeschlossen|erledigt|fertig|done|complete|completed|closed|^100$)/.test(s)) return "Completed";
+  if(/(not started|nicht begonnen|offen|geplant|^neu|todo|to do|^open$|backlog)/.test(s)) return "Not Started";
+  if(pct>=100) return "Completed"; if(pct>0) return "In Progress"; return "Not Started"; }
+function normPrio(v){ const s=String(v||"").toLowerCase();
+  if(/(hoch|high|kritisch|urgent|^1$|^a$)/.test(s)) return "High";
+  if(/(niedrig|low|gering|^3$|^c$)/.test(s)) return "Low"; return "Medium"; }
+function normFormat(v){ const s=String(v||"").trim(); if(!s) return "";
+  const hit=FORMATS.find(f=>f && f.toLowerCase()===s.toLowerCase()); return hit||s; }   // canonicalise known formats, keep unknown values verbatim
+function normYesNo(v){ return /(ja|yes|^y$|^x$|true|wahr|^1$|meilenstein|milestone)/.test(String(v||"").toLowerCase().trim())?"Yes":"No"; }
+function parsePct(v){ if(v==null||v==="") return 0; let n=parseFloat(String(v).replace("%","").replace(",",".").trim()); if(!isFinite(n)) return 0; if(n<=1) n*=100; return Math.max(0,Math.min(100,Math.round(n))); }
+function parseDateVal(v){ if(v==null||v==="") return ""; const s=String(v).trim(); if(!s) return "";
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  let m=/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/.exec(s);
+  if(m){ let d=+m[1],mo=+m[2],y=+m[3]; if(y<100) y+=2000; if(mo>12&&d<=12){ const t=d; d=mo; mo=t; } return `${y}-${pad(mo)}-${pad(d)}`; }
+  const dt=new Date(s); return isNaN(dt)?"":dt.toISOString().slice(0,10); }
+
+// --- mapping UI ---
+// headers that must never be mapped to a given field (e.g. a "Task-ID" column is not the task name)
+const SYN_NEG={ task:/task[\s\-_]*id|aufgaben[\s\-_]*nr|^id$|^nr\.?$|^no\.?$|^code$/ };
+function autoMap(headers){
+  const norm=headers.map(x=>String(x||"").trim().toLowerCase());
+  // score every field × column, then assign greedily by descending score so exact matches beat substrings
+  const cand=[];
+  IMPORT_FIELDS.forEach(([f])=>{ const syns=SYN[f]||[], neg=SYN_NEG[f];
+    norm.forEach((hh,i)=>{ if(!hh || (neg&&neg.test(hh))) return; let sc=0;
+      syns.forEach(s=>{ if(hh===s) sc=Math.max(sc,3); else if(hh.includes(s)||s.includes(hh)) sc=Math.max(sc,2); });
+      if(sc>0) cand.push([sc,f,i]); }); });
+  cand.sort((a,b)=> b[0]-a[0] || a[1].localeCompare(b[1]) || a[2]-b[2]);
+  const usedF=new Set(), usedC=new Set(), map={};
+  cand.forEach(([sc,f,i])=>{ if(usedF.has(f)||usedC.has(i)) return; map[f]=i; usedF.add(f); usedC.add(i); });
+  return map;
+}
+// Find the header row automatically (it isn't always row 1 — e.g. logo/title rows above)
+function detectHeaderRow(rows){
+  const scan=Math.min(rows.length,25); let best=0,bestScore=-1;
+  for(let i=0;i<scan;i++){
+    const cells=(rows[i]||[]).map(x=>String(x==null?"":x).trim().toLowerCase());
+    const nonEmpty=cells.filter(Boolean); if(nonEmpty.length<2) continue;
+    let hits=0;
+    nonEmpty.forEach(c=>{ for(const f in SYN){ if(SYN[f].some(s=>c===s||(s.length>2&&(c.includes(s)||s.includes(c))))){ hits++; break; } } });
+    const score=hits*2 + Math.min(nonEmpty.length,10)*0.1;
+    if(score>bestScore){ bestScore=score; best=i; }
+  }
+  return best;
+}
+function impSetHeaderRow(n){ IMP.headerRow=Math.max(0,(parseInt(n,10)||1)-1); renderImportModal(); }
+async function startImport(input){
+  const file=input.files&&input.files[0]; if(!file) return;
+  try{ const sheets=(await readSpreadsheet(file)).filter(s=>s.rows&&s.rows.length);
+    if(!sheets.length){ alert("The file contains no data."); input.value=""; return; }
+    IMP={sheets,si:0,fileName:file.name,headerRow:null}; renderImportModal();
+  }catch(e){ alert("Import failed:\n"+e.message); }
+  input.value="";
+}
+function impSwitchSheet(i){ IMP.si=+i; IMP.headerRow=null; renderImportModal(); }
+function closeImport(){ const m=document.getElementById("importModal"); if(m) m.style.display="none"; }
+function readMapping(){ const map={}; document.querySelectorAll("#importModal select[data-impf]").forEach(s=>{ const v=+s.value; if(v>=0) map[s.dataset.impf]=v; }); return map; }
+function updateImpPreview(){
+  const map=readMapping(), rows=IMP.dataRows.slice(0,3), cols=["task","ws","resp","status","due"];
+  const head=cols.map(c=>`<th>${IMPORT_FIELDS.find(f=>f[0]===c)[1].replace(" *","")}</th>`).join("");
+  const body=rows.map(r=>`<tr>${cols.map(c=>`<td>${map[c]!=null?h(r[map[c]]||""):'<span class="note">—</span>'}</td>`).join("")}</tr>`).join("");
+  const el=document.getElementById("impPrev"); if(el) el.innerHTML=`<table class="rep-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function renderImportModal(){
+  const sh=IMP.sheets[IMP.si];
+  if(IMP.headerRow==null) IMP.headerRow=detectHeaderRow(sh.rows);
+  const hr=Math.max(0,Math.min(IMP.headerRow, sh.rows.length-1));
+  IMP.headers=sh.rows[hr]||[];
+  IMP.dataRows=sh.rows.slice(hr+1).filter(r=>r.some(c=>String(c==null?"":c).trim()!==""));
+  const map=autoMap(IMP.headers);
+  const colOpts=sel=>`<option value="-1">— don't import —</option>`+IMP.headers.map((hd,i)=>`<option value="${i}" ${sel===i?"selected":""}>${h(hd||("Column "+colL(i)))}</option>`).join("");
+  const sheetSel=IMP.sheets.length>1?`<label style="font-size:13px">Sheet: <select onchange="impSwitchSheet(this.value)">${IMP.sheets.map((s,i)=>`<option value="${i}" ${i===IMP.si?"selected":""}>${h(s.name)}</option>`).join("")}</select></label>`:"";
+  const projSel=`<select id="impTarget"><option value="__new__">➕ Create new project</option>${PROJECTS.map((p,i)=>`<option value="${i}">Append to “${h(p.name)}”</option>`).join("")}</select>`;
+  const fields=IMPORT_FIELDS.map(([f,lbl])=>`<tr><td>${lbl}</td><td><select data-impf="${f}">${colOpts(map[f]!=null?map[f]:-1)}</select></td></tr>`).join("");
+  const defWs=`<select id="impDefWs">${WS.map(([n,a])=>`<option value="${a}">${h(n)}</option>`).join("")}</select>`;
+  const defName=h(sh.name&&sh.name!=="Tabelle1"&&sh.name!=="Sheet1"?sh.name:IMP.fileName.replace(/\.[^.]+$/,""));
+  const html=`<div class="imp-card">
+    <div class="imp-head"><b>📥 Import Excel / CSV</b><button class="iconbtn" onclick="closeImport()">✕</button></div>
+    <div class="imp-body">
+      <div class="imp-row">${sheetSel}<label style="font-size:13px">Header row: <input id="impHeaderRow" type="number" min="1" value="${hr+1}" style="width:62px;padding:6px 8px;border:1px solid var(--line);border-radius:8px" onchange="impSetHeaderRow(this.value)"></label><span class="note">${IMP.dataRows.length} data rows · source: ${h(IMP.fileName)}</span></div>
+      <div class="imp-row">Target: ${projSel} <span id="impNewWrap">· Project name: <input id="impName" value="${defName}" style="min-width:220px"></span></div>
+      <div class="imp-row">Default workstream (for empty/unknown): ${defWs}</div>
+      <div class="imp-grid">
+        <table class="imp-map"><thead><tr><th>App field</th><th>Excel/CSV column</th></tr></thead><tbody>${fields}</tbody></table>
+        <div class="imp-prev"><h4>Preview (first 3 rows)</h4><div id="impPrev"></div></div>
+      </div>
+    </div>
+    <div class="imp-foot">
+      <span class="note">* "Task / Deliverable" must be mapped. Status/priority are normalised, unknown workstreams are kept.</span>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="closeImport()">Cancel</button>
+      <button class="btn" onclick="doImport()">Import</button>
+    </div></div>`;
+  let m=document.getElementById("importModal");
+  if(!m){ m=document.createElement("div"); m.id="importModal"; m.className="imp-overlay"; document.body.appendChild(m); }
+  m.innerHTML=html; m.style.display="flex";
+  document.getElementById("impTarget").onchange=function(){ document.getElementById("impNewWrap").style.display=this.value==="__new__"?"inline":"none"; };
+  m.querySelectorAll("select[data-impf]").forEach(s=>s.addEventListener("change",updateImpPreview));
+  updateImpPreview();
+}
+function doImport(){
+  const map=readMapping();
+  if(map.task==null){ alert('Please map the "Task / Deliverable" field to a column.'); return; }
+  const defWs=document.getElementById("impDefWs").value, tgt=document.getElementById("impTarget").value;
+  const tasks=[];
+  IMP.dataRows.forEach(r=>{
+    const get=f=> map[f]!=null ? String(r[map[f]]==null?"":r[map[f]]).trim() : "";
+    const task=get("task"); if(!task && !get("desc")) return;
+    let pct=parsePct(get("pct")); let status=normStatus(get("status"),pct);
+    if(status==="Completed" && map.pct==null) pct=100;
+    const t={ ws:normWS(get("ws"),defWs), sub:get("sub")||"–", task:task||"(untitled)", desc:get("desc"),
+      resp:get("resp"), support:get("support"), start:parseDateVal(get("start")), due:parseDateVal(get("due")),
+      prio:normPrio(get("prio")), status, pct, ms:normYesNo(get("ms")), deps:get("deps")||"-",
+      risk:get("risk")||"-", format:normFormat(get("format")), revision:get("revision"),
+      upd:parseDateVal(get("upd"))||TODAY_ISO, comment:get("comment") };
+    if(!t.start&&t.due) t.start=t.due; if(!t.due&&t.start) t.due=t.start;
+    if(!t.start&&!t.due){ t.start=TODAY_ISO; t.due=TODAY_ISO; }
+    tasks.push(t);
+  });
+  if(!tasks.length){ alert("No importable rows found."); return; }
+  let proj;
+  if(tgt==="__new__"){ const name=(document.getElementById("impName").value||"Imported project").trim();
+    proj={id:"p-imp-"+Date.now(),name,fleet:"–",lead:"Chief Training Captain",phase:"Planning",eis:"2027-12-31",tasks:[],ws:wsFromTasks(tasks)}; PROJECTS.push(proj); }
+  else proj=PROJECTS[+tgt];
+  const noMax={}; proj.tasks.forEach(d=>{ noMax[d.ws]=Math.max(noMax[d.ws]||0,d.no||0); });
+  let uid=proj.tasks.reduce((m,d)=>Math.max(m,d.uid==null?-1:d.uid),-1)+1;
+  tasks.forEach(t=>{ noMax[t.ws]=(noMax[t.ws]||0)+1; t.no=noMax[t.ws]; t.uid=uid++; proj.tasks.push(t); });
+  recomputeProject(proj); mergeListsFromTasks(proj);   // imported owners/depts/sub/format become managed options
+  setActive(PROJECTS.indexOf(proj)); save(); rebuildProjSel(); rebuildAll(); closeImport(); showView("table");
+  alert(tasks.length+" task(s) imported into “"+proj.name+"”.");
+}
+
+/* ---------- WORKSTREAM MANAGEMENT (per project) ---------- */
+let WSMGR={rows:[]};
+function wsUsage(code){ return DATA.filter(d=>d.ws===code).length; }
+function openWsManager(){ WSMGR={rows:pWS(PROJECTS[ACTIVE]).map(([n,a])=>({orig:a,name:n,code:a}))}; renderWsManager(); }
+function renderWsManager(){
+  const rows=WSMGR.rows.map((r,i)=>`<tr data-i="${i}">
+    <td><input class="ws-name" value="${h(r.name)}" placeholder="Workstream name" style="width:100%"></td>
+    <td><input class="ws-code" value="${h(r.code)}" placeholder="Code" style="width:96px;text-transform:uppercase"></td>
+    <td style="text-align:center;color:var(--muted)">${r.orig?wsUsage(r.orig):0}</td>
+    <td><button class="iconbtn" title="Remove" onclick="wsMgrRemove(${i})">✕</button></td></tr>`).join("");
+  const html=`<div class="imp-card" style="width:min(640px,96vw)">
+    <div class="imp-head"><b>🗂 Workstreams · ${h(PROJECTS[ACTIVE].name)}</b><button class="iconbtn" onclick="closeWsModal()">✕</button></div>
+    <div class="imp-body">
+      <p class="note" style="margin-top:0">Define this project's workstream structure. The code (abbreviation) appears in the task IDs (e.g. <b>PLAN-01</b>). Applies to this project only.</p>
+      <table class="imp-map" style="table-layout:auto"><thead><tr><th>Workstream</th><th>Code</th><th>Tasks</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      <button class="btn ghost" style="margin-top:10px" onclick="wsMgrAdd()">➕ Add workstream</button>
+    </div>
+    <div class="imp-foot">
+      <span class="note">Removed workstreams still in use are kept as an external group.</span>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="wsMgrReset()">↺ Default</button>
+      <button class="btn ghost" onclick="closeWsModal()">Cancel</button>
+      <button class="btn" onclick="wsMgrSave()">Save</button>
+    </div></div>`;
+  let m=document.getElementById("wsModal");
+  if(!m){ m=document.createElement("div"); m.id="wsModal"; m.className="imp-overlay"; document.body.appendChild(m); }
+  m.innerHTML=html; m.style.display="flex";
+}
+function syncWsmgr(){ const out=[];
+  document.querySelectorAll("#wsModal tbody tr").forEach(tr=>{ const i=+tr.dataset.i, o=WSMGR.rows[i];
+    out.push({orig:o?o.orig:"", name:tr.querySelector(".ws-name").value, code:tr.querySelector(".ws-code").value}); });
+  WSMGR.rows=out; }
+function wsMgrAdd(){ syncWsmgr(); WSMGR.rows.push({orig:"",name:"",code:""}); renderWsManager(); }
+function wsMgrRemove(i){ syncWsmgr(); WSMGR.rows.splice(i,1); renderWsManager(); }
+function wsMgrReset(){ if(confirm("Reset workstreams to the default list?")){ WSMGR.rows=WS.map(([n,a])=>({orig:a,name:n,code:a})); renderWsManager(); } }
+function closeWsModal(){ const m=document.getElementById("wsModal"); if(m) m.style.display="none"; }
+function wsMgrSave(){
+  syncWsmgr();
+  const rows=WSMGR.rows.map(r=>({orig:r.orig,name:String(r.name).trim(),code:String(r.code).trim().toUpperCase()})).filter(r=>r.name||r.code);
+  if(!rows.length){ alert("At least one workstream is required."); return; }
+  const taken=new Set();
+  rows.forEach(r=>{ if(!r.name) r.name=r.code; if(!r.code) r.code=deriveWsCode(r.name,taken);
+    else { let c=r.code,i=2; while(taken.has(c)){ c=r.code+i; i++; } r.code=c; taken.add(c); } });
+  const p=PROJECTS[ACTIVE];
+  rows.forEach(r=>{ if(r.orig && r.orig!==r.code) p.tasks.forEach(d=>{ if(d.ws===r.orig) d.ws=r.code; }); });
+  p.ws=rows.map(r=>[r.name,r.code]);
+  recomputeProject(p); setActive(ACTIVE); save(); rebuildAll(); closeWsModal(); markSaved();
+}
+
+/* ---------- managed lists dialog (Owner / Sub-Workstream / Departments / Format) ---------- */
+let LMGR=null;
+function lmUsage(field,val){ return DATA.filter(d=>String(d[field]||"")===val).length; }
+function openListsManager(){ const p=PROJECTS[ACTIVE]; ensureLists(p);
+  LMGR={}; MGFIELDS.forEach(([f])=>{ LMGR[f]=listFor(f).map(v=>({orig:v,val:v})); }); renderListsManager(); }
+function renderListsManager(){
+  const section=([f,label])=>{
+    const rows=LMGR[f].map((r,i)=>`<tr data-i="${i}">
+      <td><input class="lm-val" value="${h(r.val)}" placeholder="${label}" style="width:100%"></td>
+      <td style="text-align:center;color:var(--muted)">${r.orig?lmUsage(f,r.orig):0}</td>
+      <td><button class="iconbtn" title="Remove" onclick="lmRemove('${f}',${i})">✕</button></td></tr>`).join("");
+    return `<div class="lm-sec">
+      <h4 style="margin:16px 0 6px;color:var(--ew-magenta-dark)">${label}${label.endsWith("s")?"":"s"}</h4>
+      <table class="imp-map" style="table-layout:auto"><thead><tr><th>${label}</th><th style="width:60px">Used</th><th style="width:36px"></th></tr></thead><tbody data-field="${f}">${rows||`<tr><td colspan="3" class="note">No entries yet.</td></tr>`}</tbody></table>
+      <button class="btn ghost" style="margin-top:6px" onclick="lmAdd('${f}')">➕ Add</button>
+      <button class="btn ghost" style="margin-top:6px" onclick="lmFromData('${f}')" title="Add every value currently used by tasks">↺ From data</button></div>`;
+  };
+  const html=`<div class="imp-card" style="width:min(720px,96vw);max-height:92vh;display:flex;flex-direction:column">
+    <div class="imp-head"><b>🏷 Managed lists · ${h(PROJECTS[ACTIVE].name)}</b><button class="iconbtn" onclick="closeListsModal()">✕</button></div>
+    <div class="imp-body" style="overflow:auto">
+      <p class="note" style="margin-top:0">Edit the drop-down options for this project's tasks. Renaming an entry updates every task that uses it; values still used by a task are kept even if removed here. Applies to this project only.</p>
+      ${MGFIELDS.map(section).join("")}
+    </div>
+    <div class="imp-foot"><span class="note">Status &amp; Priority use the standard project-management vocabulary; Workstreams have their own editor.</span>
+      <span style="flex:1"></span>
+      <button class="btn ghost" onclick="closeListsModal()">Cancel</button>
+      <button class="btn" onclick="lmSave()">Save</button></div></div>`;
+  let m=document.getElementById("listsModal");
+  if(!m){ m=document.createElement("div"); m.id="listsModal"; m.className="imp-overlay"; document.body.appendChild(m); }
+  m.innerHTML=html; m.style.display="flex";
+}
+function lmSync(){ MGFIELDS.forEach(([f])=>{ const out=[];
+  document.querySelectorAll(`#listsModal tbody[data-field="${f}"] tr`).forEach(tr=>{ const inp=tr.querySelector(".lm-val"); if(!inp) return;
+    const i=+tr.dataset.i, o=LMGR[f][i]; out.push({orig:o?o.orig:"", val:inp.value}); }); LMGR[f]=out; }); }
+function lmAdd(f){ lmSync(); LMGR[f].push({orig:"",val:""}); renderListsManager(); }
+function lmRemove(f,i){ lmSync(); LMGR[f].splice(i,1); renderListsManager(); }
+function lmFromData(f){ lmSync(); const have=new Set(LMGR[f].map(r=>String(r.val).trim()));
+  distinctVals(DATA,f).forEach(v=>{ if(!have.has(v)){ LMGR[f].push({orig:v,val:v}); have.add(v); } }); renderListsManager(); }
+function closeListsModal(){ const m=document.getElementById("listsModal"); if(m) m.style.display="none"; }
+function lmSave(){ lmSync(); const p=PROJECTS[ACTIVE]; ensureLists(p);
+  MGFIELDS.forEach(([f])=>{
+    LMGR[f].forEach(r=>{ const nv=String(r.val).trim(); if(r.orig && nv && r.orig!==nv) p.tasks.forEach(d=>{ if(String(d[f]||"")===r.orig) d[f]=nv; }); });
+    const list=[]; LMGR[f].forEach(r=>{ const nv=String(r.val).trim(); if(nv && !list.includes(nv)) list.push(nv); });
+    p.lists[f]=list;
+  });
+  recomputeProject(p); save(); rebuildAll(); closeListsModal(); markSaved();
+}
+
+/* ---------- GANTT ---------- */
+function buildGantt(){
+  if(!DATA.length){ document.getElementById("gtbl").innerHTML="<tbody><tr><td style='padding:18px;color:#888'>No tasks in this project yet.</td></tr></tbody>"; return; }
+  const ds=DATA.flatMap(d=>[new Date(d.start),new Date(d.due)]);
+  let g0=new Date(Math.min(...ds)), gEnd=new Date(Math.max(...ds));
+  g0=new Date(g0.getFullYear(),g0.getMonth(),1);
+  gEnd=new Date(gEnd.getFullYear(),gEnd.getMonth()+1,1);
+  const months=[]; let cur=new Date(g0); while(cur<gEnd){ months.push(new Date(cur)); cur.setMonth(cur.getMonth()+1); }
+  const span=gEnd-g0;
+  const mLbl=d=>MONTHS_EN[d.getMonth()]+" "+String(d.getFullYear()).slice(2);
+
+  let html=`<thead><tr><th class="gname">Workstream / Task</th>${months.map(m=>`<th class="gm">${mLbl(m)}</th>`).join("")}</tr></thead><tbody>`;
+  const todayPct=((TODAY-g0)/span)*100;
+  const CP=criticalPath(DATA).set;
+
+  wsCodes(PROJECTS[ACTIVE]).forEach(([name,abbr])=>{
+    html+=`<tr class="gws"><td class="gname">${name}</td><td class="gcell" colspan="${months.length}" style="position:relative">
+      <div class="today" style="left:${todayPct}%"></div></td></tr>`;
+    DATA.filter(d=>d.ws===abbr).forEach(d=>{
+      const s=new Date(d.start), e=new Date(d.due);
+      const left=((s-g0)/span)*100, width=Math.max(((e-s)/span)*100,0.8);
+      const cls = statusDone(d.status)?"done": d.status==="Overdue"?"delay":"";
+      const cr = CP.has(normId(d.tid))?"crit":"";
+      const bar = d.ms==="Yes"
+        ? `<div class="gdiamond ${cr}" data-tid="${normId(d.tid)}" style="left:${left+width/2}%" title="${d.task} – ${de(d.due)}"></div>`
+        : `<div class="gbar ${cls} ${cr}" data-tid="${normId(d.tid)}" style="left:${left}%;width:${width}%" title="${d.task}\n${de(d.start)} → ${de(d.due)} (${d.pct}%)"></div>`;
+      html+=`<tr class="gtask" data-uid="${d.uid}" title="Open to-dos →"><td class="gname" style="font-weight:500;font-size:11px">${cr?'<span class="critflag">⚠</span>':''}${d.tid} · ${d.task}</td>
+        <td class="gcell" colspan="${months.length}" style="position:relative">
+          <div class="today" style="left:${todayPct}%"></div>${bar}</td></tr>`;
+    });
+  });
+  html+="</tbody>";
+  document.getElementById("gtbl").innerHTML=html;
+  if(document.getElementById("gantt").classList.contains("active")) requestAnimationFrame(()=>{ try{drawDeps();}catch(e){} });
+}
+
+/* ---------- dependency arrows (SVG overlay over the Gantt) ---------- */
+function drawDeps(){
+  const gantt=document.querySelector("#gantt .gantt"); if(!gantt) return;
+  const old=gantt.querySelector("svg.depsvg"); if(old) old.remove();
+  const sel=document.getElementById("depMode"); const mode=sel?sel.value:"crit";
+  if(mode==="off") return;
+  if(!gantt.clientWidth) return;
+  const bars={}; gantt.querySelectorAll("[data-tid]").forEach(el=>bars[el.dataset.tid]=el);
+  const cp=criticalPath(DATA).set;
+  const grect=gantt.getBoundingClientRect();
+  const NS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("class","depsvg");
+  svg.setAttribute("width",gantt.scrollWidth); svg.setAttribute("height",gantt.scrollHeight);
+  const pos=el=>{ const r=el.getBoundingClientRect(); return {
+    l:r.left-grect.left+gantt.scrollLeft, r:r.right-grect.left+gantt.scrollLeft,
+    m:(r.top+r.bottom)/2-grect.top+gantt.scrollTop }; };
+  DATA.forEach(t=>{
+    const tid=normId(t.tid), succ=bars[tid]; if(!succ) return;
+    String(t.deps||"").split(",").map(s=>normId(s)).forEach(dp=>{
+      if(!dp||dp==="-"||!bars[dp]) return;
+      const isCrit=cp.has(tid)&&cp.has(dp);
+      if(mode==="crit"&&!isCrit) return;
+      const a=pos(bars[dp]), b=pos(succ);
+      const sx=a.r, sy=a.m, ex=b.l, ey=b.m, col=isCrit?"#d23b3b":"#9aa3b1";
+      const p=document.createElementNS(NS,"path");
+      p.setAttribute("d",`M${sx},${sy} L${sx+9},${sy} L${sx+9},${ey} L${ex-5},${ey}`);
+      p.setAttribute("fill","none"); p.setAttribute("stroke",col);
+      p.setAttribute("stroke-width",isCrit?"1.7":"1"); p.setAttribute("opacity",isCrit?"0.95":"0.45");
+      svg.appendChild(p);
+      const ah=document.createElementNS(NS,"path");
+      ah.setAttribute("d",`M${ex-5},${ey} l-6,-3.2 l0,6.4 z`); ah.setAttribute("fill",col);
+      ah.setAttribute("opacity",isCrit?"0.95":"0.5");
+      svg.appendChild(ah);
+    });
+  });
+  gantt.appendChild(svg);
+}
+
+/* ---------- TO-DO TAB (checklists per task / Gantt sub-item) ---------- */
+function buildTodos(){
+  const wsF=document.getElementById("tdWs").value, q=document.getElementById("tdSearch").value.toLowerCase();
+  const onlyOpen=document.getElementById("tdOpen").checked, hideEmpty=document.getElementById("tdHideEmpty").checked;
+  let totOpen=0, totDone=0, tasksWith=0, html="";
+  wsCodes(PROJECTS[ACTIVE]).forEach(([name,abbr])=>{
+    if(wsF&&abbr!==wsF) return;
+    const items=DATA.filter(d=>d.ws===abbr && (!q||(d.task+" "+d.tid+" "+(d.sub||"")).toLowerCase().includes(q)));
+    if(!items.length) return;
+    let sec="";
+    items.forEach(d=>{
+      const todos=d.todos||[]; const done=todos.filter(t=>t.done).length;
+      totOpen+=todos.length-done; totDone+=done; if(todos.length) tasksWith++;
+      if(hideEmpty && !todos.length) return;
+      const shown = todos.map((t,i)=>({t,i})).filter(x=>!onlyOpen || !x.t.done);
+      if(onlyOpen && todos.length && !shown.length) return;     // all done -> hide when "open only"
+      const pct = todos.length?Math.round(done/todos.length*100):0;
+      const head=`<div class="todo-task-head"><span class="tid">${d.tid}</span><span class="tt">${h(d.task)}</span>
+          <span class="pill ${statusClass(d.status)}">${d.status}</span>
+          ${todos.length?`<span class="todo-count">${done}/${todos.length}</span><span class="todo-mini"><i style="width:${pct}%"></i></span>`
+            :`<button class="iconbtn" data-act="expand" title="Add to-do">＋ to-do</button>`}</div>`;
+      const itemsHtml = todos.length ? (shown.length?shown.map(({t,i})=>`<div class="todo-item ${t.done?'done':''}" data-ti="${i}">
+            <input type="checkbox" data-act="toggle" ${t.done?'checked':''}>
+            <div class="todo-text" contenteditable data-act="edit">${h(t.text)}</div>
+            <button class="iconbtn" data-act="del" title="Remove">✕</button></div>`).join("") : `<div class="todo-empty">All done 🎉</div>`) : "";
+      const addBox=`<div class="todo-add" ${todos.length?"":'style="display:none"'}><input placeholder="Add a to-do and press Enter…" data-act="addinput">
+          <button class="btn ghost" data-act="add">Add</button></div>`;
+      sec+=`<div class="todo-task ${todos.length?"":"compact"}" data-uid="${d.uid}">${head}${itemsHtml}${addBox}</div>`;
+    });
+    if(sec) html+=`<div class="todo-ws"><div class="todo-ws-head"><span>${h(name)}</span><span class="c">${items.length} task(s)</span></div>${sec}</div>`;
+  });
+  document.getElementById("todoList").innerHTML = html || `<div class="note">No tasks match the filters.</div>`;
+  document.getElementById("tdSummary").textContent = `${totOpen} open · ${totDone} done · ${tasksWith} task(s) with to-dos`;
+}
+function tdTask(card){ return DATA.find(d=>String(d.uid)===String(card.dataset.uid)); }
+function tdRerender(focusUid){ const y=window.scrollY; buildTodos(); window.scrollTo(0,y);
+  if(focusUid){ const c=document.querySelector(`#todoList .todo-task[data-uid="${focusUid}"]`); const i=c&&c.querySelector("[data-act=addinput]"); if(i) i.focus(); } }
+function tdCommit(){ recompute(); save(); markSaved(); refreshStats(); }   // recompute() re-derives task % from to-dos
+function tdAdd(inp){ const card=inp.closest(".todo-task"), d=tdTask(card), text=inp.value.trim(); if(!d||!text) return;
+  if(!Array.isArray(d.todos)) d.todos=[]; d.todos.push({id:"td"+Date.now()+Math.floor(Math.random()*1e4),text,done:false});
+  tdCommit(); tdRerender(d.uid); }
+// Jump from a Gantt task to its to-do checklist
+function openTaskTodos(uid){
+  document.getElementById("tdSearch").value=""; document.getElementById("tdOpen").checked=false;
+  document.getElementById("tdHideEmpty").checked=false; document.getElementById("tdWs").value="";
+  showView("todo");
+  requestAnimationFrame(()=>{
+    const card=document.querySelector(`#todoList .todo-task[data-uid="${uid}"]`); if(!card) return;
+    card.scrollIntoView({behavior:"smooth",block:"center"});
+    card.classList.add("flash"); setTimeout(()=>card.classList.remove("flash"),1600);
+    const exp=card.querySelector("[data-act=expand]");
+    if(exp) exp.click(); else { const inp=card.querySelector("[data-act=addinput]"); if(inp) inp.focus(); }
+  });
+}
+(function wireTodos(){
+  ["tdWs","tdSearch","tdOpen","tdHideEmpty"].forEach(id=>document.getElementById(id).addEventListener("input",buildTodos));
+  // click a Gantt task row -> open its to-do list
+  document.getElementById("gtbl").addEventListener("click",e=>{ const tr=e.target.closest("tr.gtask"); if(tr&&tr.dataset.uid) openTaskTodos(tr.dataset.uid); });
+  const list=document.getElementById("todoList");
+  list.addEventListener("change",e=>{ if(e.target.dataset.act!=="toggle") return;
+    const card=e.target.closest(".todo-task"), d=tdTask(card), ti=+e.target.closest(".todo-item").dataset.ti;
+    if(d&&d.todos[ti]){ d.todos[ti].done=e.target.checked; tdCommit(); tdRerender(); } });
+  list.addEventListener("input",e=>{ if(e.target.dataset.act!=="edit") return;
+    const card=e.target.closest(".todo-task"), d=tdTask(card), ti=+e.target.closest(".todo-item").dataset.ti;
+    if(d&&d.todos[ti]){ d.todos[ti].text=e.target.textContent; markSaved(); saveDebounced(); } });
+  list.addEventListener("keydown",e=>{ if(e.target.dataset.act==="addinput"&&e.key==="Enter"){ e.preventDefault(); tdAdd(e.target); } });
+  list.addEventListener("click",e=>{ const b=e.target.closest("[data-act]"); if(!b) return;
+    if(b.dataset.act==="expand"){ const card=b.closest(".todo-task"), box=card.querySelector(".todo-add");
+      box.style.display="flex"; b.style.display="none"; const inp=box.querySelector("[data-act=addinput]"); if(inp) inp.focus(); }
+    if(b.dataset.act==="add"){ tdAdd(b.closest(".todo-add").querySelector("[data-act=addinput]")); }
+    if(b.dataset.act==="del"){ const card=b.closest(".todo-task"), d=tdTask(card), ti=+b.closest(".todo-item").dataset.ti;
+      if(d&&d.todos[ti]){ d.todos.splice(ti,1); tdCommit(); tdRerender(); } } });
+})();
+
+/* ---------- EDITING, ADD/DELETE, PERSISTENCE ---------- */
+const tbody = document.getElementById("tbody");
+const savedTag = document.getElementById("savedTag");
+let saveTimer, statTimer;
+const saveDebounced = () => { clearTimeout(saveTimer); saveTimer=setTimeout(save,400); };
+const refreshStats = () => { buildDashboard(); buildGantt(); renderPortfolio(); rebuildProjSel(); };
+const refreshStatsDebounced = () => { clearTimeout(statTimer); statTimer=setTimeout(refreshStats,250); };
+function markSaved(){ if(!savedTag) return; savedTag.textContent="✓ saved"; savedTag.style.opacity=1;
+  clearTimeout(markSaved._t); markSaved._t=setTimeout(()=>savedTag.style.opacity=0,1400); }
+const byUid = u => DATA.find(x=>String(x.uid)===String(u));
+const nextNo = ws => { const ns=DATA.filter(x=>x.ws===ws).map(x=>x.no); return ns.length?Math.max(...ns)+1:1; };
+
+// Free-text fields: update live, persist, no re-render (keeps caret) - they don't affect stats
+function touchUpd(d,tr){ d.upd=TODAY_ISO; const u=tr.querySelector('input[data-field=upd]'); if(u) u.value=TODAY_ISO; }
+tbody.addEventListener("input", e=>{
+  const el=e.target, tr=el.closest("tr"); if(!tr) return; const d=byUid(tr.dataset.uid); if(!d) return;
+  if(el.dataset.field && el.isContentEditable){ d[el.dataset.field]=el.textContent; touchUpd(d,tr); markSaved(); saveDebounced();
+    if(el.dataset.field==="deps") refreshStatsDebounced(); }   // dependencies drive the critical path
+  else if(el.dataset.field==="pct"){ const v=Math.max(0,Math.min(100,parseInt(el.value,10)||0)); d.pct=v;
+    const b=tr.querySelector(".mini i"); if(b) b.style.width=v+"%"; touchUpd(d,tr); markSaved(); saveDebounced(); refreshStatsDebounced(); }
+});
+// Selects / dates: update model, recompute, persist, re-render + refresh stats
+tbody.addEventListener("change", e=>{
+  const el=e.target, tr=el.closest("tr"); if(!tr) return; const d=byUid(tr.dataset.uid); if(!d) return;
+  const f=el.dataset.field; if(!f) return;
+  if(el.classList.contains("mgsel") && el.value==="__add__"){           // inline "➕ New…" option
+    const nv=(prompt("Add new "+MGLABEL(f)+":","")||"").trim();
+    if(nv){ addToList(f,nv); d[f]=nv; d.upd=TODAY_ISO; recompute(); save(); }
+    renderTable(); refreshStats(); markSaved(); return;                 // re-render (reverts the select if cancelled)
+  }
+  if(f==="ws"){ if(el.value!==d.ws){ d.ws=el.value; d.no=nextNo(d.ws); } }
+  else if(f==="pct"){ d.pct=Math.max(0,Math.min(100,parseInt(el.value,10)||0)); }
+  else { d[f]=el.value; }
+  if(f!=="upd") d.upd=TODAY_ISO;
+  recompute(); save(); renderTable(); refreshStats(); markSaved();
+});
+// Row actions: duplicate / delete
+tbody.addEventListener("click", e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return; const tr=b.closest("tr"); const d=byUid(tr.dataset.uid); if(!d) return;
+  if(b.dataset.act==="del" && confirm("Delete task?\n\n"+d.tid+" – "+d.task)){
+    const i=DATA.findIndex(x=>x.uid===d.uid); if(i>=0) DATA.splice(i,1); save(); renderTable(); refreshStats(); markSaved(); }
+  if(b.dataset.act==="dup"){
+    const c=JSON.parse(JSON.stringify(d)); c.uid=UID++; c.no=nextNo(c.ws);
+    c.task=d.task+" (copy)"; c.status="Not Started"; c.pct=0; c.ms="No"; c.todos=[];
+    DATA.push(c); recompute(); save(); renderTable(); refreshStats(); markSaved(); }
+});
+
+function addRow(){
+  const ws=fWs.value||WS[0][1], t="2026-06-25";
+  DATA.push({uid:UID++,ws,sub:"–",no:nextNo(ws),task:"New task",desc:"",resp:"",support:"",
+    start:t,due:t,prio:"Medium",status:"Not Started",pct:0,ms:"No",deps:"-",risk:"-",upd:t,comment:""});
+  recompute(); save(); renderTable(); refreshStats(); markSaved();
+  const w=document.querySelector(".tablewrap"); if(w) w.scrollTop=w.scrollHeight;
+}
+function resetDemo(){
+  if(confirm("Reset the entire portfolio to demo data?\nAll projects & changes will be lost.")){
+    try{ localStorage.removeItem(KEY); }catch(e){} seedPortfolio(); setActive(0); save();
+    rebuildProjSel(); rebuildAll(); showView("portfolio"); markSaved(); }
+}
+
+/* ---------- NAV + HEADER WIRING ---------- */
+document.querySelectorAll("#nav .tab").forEach(t=>t.onclick=()=>{ t.dataset.tab==="report" ? showReport("project") : showView(t.dataset.tab); });
+document.getElementById("projSel").onchange=function(){ openProject(this.value); };
+document.getElementById("depMode").addEventListener("change",()=>{ try{drawDeps();}catch(e){} });
+window.addEventListener("resize",()=>{ if(document.getElementById("gantt").classList.contains("active")){ try{drawDeps();}catch(e){} } });
+// edit project meta from the header (name / lead / phase via contenteditable, EIS via date input)
+document.querySelector("header").addEventListener("input",e=>{
+  const f=e.target.dataset.pfield; if(!f||e.target.tagName==="INPUT") return;
+  PROJECTS[ACTIVE][f]=e.target.textContent; save(); rebuildProjSel(); markSaved();
+});
+document.querySelector("header").addEventListener("change",e=>{
+  const f=e.target.dataset.pfield; if(f&&e.target.tagName==="INPUT"){ PROJECTS[ACTIVE][f]=e.target.value; save(); markSaved(); }
+});
+
+/* ---------- CLOUD SYNC (Supabase: one login, auto-sync across devices) ---------- */
+const SB_URL = "https://cfmngbcgrdveqbsdcavs.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbW5nYmNncmR2ZXFic2RjYXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODY0MDQsImV4cCI6MjA5ODA2MjQwNH0.fRSoOnonGmyiR2lyN752kPE3q8DDbiGxn-u3j7pNPHI";
+const SYNC_KEY = "pm_portfolio";
+const CLIENT_ID = "c"+Math.random().toString(36).slice(2)+Date.now().toString(36);
+let sb=null, USER=null, chan=null, applyingRemote=false, cloudTimer=null, booted=false;
+
+const $=id=>document.getElementById(id);
+function syncStatus(state){ const b=$("syncBadge"); if(!b) return;
+  const map={syncing:["s-syncing","⟳ Syncing…"],synced:["s-ok","✓ Synced"],error:["s-err","⚠ Offline – will retry"],
+    local:["s-off","Local only (this device)"],"":["s-off",""]};
+  const [cls,txt]=map[state]||map[""]; b.className="syncbadge "+cls; b.textContent=txt; }
+function setAccountUI(email){ const a=$("acctInfo"), s=$("signOutBtn");
+  if(email){ if(a) a.innerHTML="Signed in as <b>"+h(email)+"</b>"; if(s) s.style.display=""; }
+  else { if(a) a.textContent=""; if(s) s.style.display="none"; } }
+function authMsg(m,err){ const e=$("authMsg"); if(e){ e.textContent=m||""; e.style.color=err?"var(--red)":"var(--muted)"; } }
+function showAuthGate(){ $("authGate").style.display="flex"; }
+function hideAuthGate(){ $("authGate").style.display="none"; }
+
+function bootApp(){ rebuildProjSel(); rebuildAll(); showView("portfolio"); }
+
+function initSupabase(){
+  try{ if(window.supabase&&window.supabase.createClient){ sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); return true; } }catch(e){}
+  return false;
+}
+async function startAuth(){
+  if(!initSupabase()){ useOffline(true); return; }      // CDN/library unavailable -> offline mode
+  try{
+    sb.auth.onAuthStateChange((event,session)=>handleSession(session));
+    const {data}=await sb.auth.getSession();
+    handleSession(data&&data.session);
+  }catch(e){ useOffline(true); }
+}
+function useOffline(silent){
+  // Local-only mode (no cloud). The app still works fully on this device.
+  hideAuthGate(); if(!booted){ booted=true; load(); bootApp(); } syncStatus("local"); setAccountUI(null);
+}
+async function handleSession(session){
+  if(session&&session.user){
+    USER=session.user; hideAuthGate(); setAccountUI(USER.email);
+    try{ if(session.access_token&&sb.realtime) sb.realtime.setAuth(session.access_token); }catch(e){}
+    if(!booted){ booted=true; await cloudInit(); } else { subscribeRealtime(); }
+  } else {
+    USER=null; unsubscribeRealtime(); setAccountUI(null);
+    if(!booted) showAuthGate();   // first load, not signed in
+  }
+}
+async function cloudInit(){
+  syncStatus("syncing");
+  try{
+    const {data,error}=await sb.from("kv").select("value").eq("key",SYNC_KEY).maybeSingle();
+    if(error) throw error;
+    if(data&&data.value){ applyCloud(data.value,true); bootApp(); syncStatus("synced"); }
+    else { load(); bootApp(); await cloudSaveNow(); }   // migrate current local data to cloud
+    subscribeRealtime();
+  }catch(e){ load(); bootApp(); syncStatus("error"); }
+}
+function applyCloud(valueStr, initial){
+  try{
+    const o=JSON.parse(valueStr); if(o.origin===CLIENT_ID && !initial) return;   // ignore our own echo
+    const payload=o.data||o; if(!payload.projects||!payload.projects.length) return;
+    applyingRemote=true;
+    PROJECTS=payload.projects; PROJECTS.forEach(recomputeProject);
+    const idx=PROJECTS.findIndex(p=>p.id===payload.active); setActive(idx>=0?idx:0);
+    saveLocal();
+    if(!initial){ rebuildProjSel(); rebuildAll(); syncStatus("synced"); }
+    applyingRemote=false;
+  }catch(e){ applyingRemote=false; }
+}
+function scheduleCloudSave(){ if(!sb||!USER||applyingRemote) return; syncStatus("syncing");
+  clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudSaveNow,800); }
+async function cloudSaveNow(){
+  if(!sb||!USER) return;
+  const value=JSON.stringify({origin:CLIENT_ID,ts:Date.now(),data:{projects:PROJECTS,active:PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].id}});
+  try{ const {error}=await sb.from("kv").upsert({user_id:USER.id,key:SYNC_KEY,value,updated_at:new Date().toISOString()},{onConflict:"user_id,key"});
+    if(error) throw error; syncStatus("synced"); }
+  catch(e){ syncStatus("error"); }
+}
+function subscribeRealtime(){
+  if(!sb||!USER||chan) return;
+  try{
+    chan=sb.channel("pm-sync-"+USER.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"kv",filter:`user_id=eq.${USER.id}`},async payload=>{
+        const row=payload.new; if(!row||row.key!==SYNC_KEY) return;
+        let v=row.value;
+        if(v==null){ try{ const {data}=await sb.from("kv").select("value").eq("key",SYNC_KEY).maybeSingle(); v=data&&data.value; }catch(e){} }
+        if(v!=null) applyCloud(v,false);
+      }).subscribe();
+  }catch(e){}
+}
+function unsubscribeRealtime(){ if(chan){ try{ sb.removeChannel(chan); }catch(e){} chan=null; } }
+async function doSignIn(){
+  const email=$("authEmail").value.trim(), pw=$("authPw").value;
+  if(!email||!pw){ authMsg("Please enter email and password.",true); return; }
+  authMsg("Signing in…");
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error) authMsg(error.message,true);
+}
+async function doSignUp(){
+  const email=$("authEmail").value.trim(), pw=$("authPw").value;
+  if(!email||!pw){ authMsg("Please enter email and password.",true); return; }
+  if(pw.length<6){ authMsg("Password must be at least 6 characters.",true); return; }
+  authMsg("Creating account…");
+  const {data,error}=await sb.auth.signUp({email,password:pw});
+  if(error){ authMsg(error.message,true); return; }
+  authMsg(data&&data.session?"Account created.":"Account created. Please confirm via the email we sent, then sign in.");
+}
+async function doSignOut(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+// flush a pending cloud save before the tab closes
+window.addEventListener("beforeunload",()=>{ if(sb&&USER&&cloudTimer){ try{ navigator.sendBeacon; cloudSaveNow(); }catch(e){} } });
+// allow Enter to submit the login form
+document.addEventListener("keydown",e=>{ if(e.key==="Enter"&&$("authGate")&&$("authGate").style.display==="flex") doSignIn(); });
+
+/* ---------- INIT ---------- */
+startAuth();
+</script>
+</body>
 </html>
