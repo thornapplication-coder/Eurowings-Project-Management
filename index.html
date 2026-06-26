@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Eurowings Project Management Cockpit · Trainings Department (TD)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <style>
   :root{
     /* Eurowings brand palette (from corporate colour guide) */
@@ -21,8 +24,9 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+  body{font-family:'Mulish',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  input,select,textarea,button{font-family:inherit}
   /* Header */
   header{background:linear-gradient(110deg,var(--ew-magenta),var(--ew-magenta-dark));color:#fff;
     padding:18px 26px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -804,11 +808,27 @@ function listFor(field){ const p=PROJECTS[ACTIVE]; ensureLists(p); return p.list
 function addToList(field,val){ const v=String(val||"").trim(); if(!v) return;
   const p=PROJECTS[ACTIVE]; ensureLists(p); if(!p.lists[field].includes(v)) p.lists[field].push(v); }
 function mergeListsFromTasks(p){ ensureLists(p); MGFIELDS.forEach(([f])=>distinctVals(p.tasks,f).forEach(v=>{ if(!p.lists[f].includes(v)) p.lists[f].push(v); })); }
+/* ---------- per-workstream sub-workstreams (p.subs = { wsCode: [sub, ...] }) ---------- */
+function ensureSubs(p){ if(!p.subs) p.subs={};
+  // keep sub-workstreams already used by tasks, grouped under their workstream
+  (p.tasks||[]).forEach(d=>{ const ws=d.ws, s=(d.sub==null?"":String(d.sub)).trim();
+    if(!ws||!s||s==="–"||s==="-") return; if(!p.subs[ws]) p.subs[ws]=[];
+    if(!p.subs[ws].includes(s)) p.subs[ws].push(s); });
+  return p.subs; }
+function subsFor(wsCode){ const p=PROJECTS[ACTIVE]; ensureSubs(p); return p.subs[wsCode]||[]; }
+function addSubTo(wsCode,val){ const v=String(val||"").trim(); if(!v||!wsCode) return;
+  const p=PROJECTS[ACTIVE]; ensureSubs(p); if(!p.subs[wsCode]) p.subs[wsCode]=[];
+  if(!p.subs[wsCode].includes(v)) p.subs[wsCode].push(v); }
 // build a managed <select> for a cell: current value always selectable, "—" for empty, "➕ New…" to extend the list inline
 function mgSelect(field,v){ const cur=v==null?"":String(v);
   const list=[...new Set([...listFor(field), cur].filter(x=>x!=="" && x!=null))].sort(alpha);   // alphabetical
   const opts=list.map(o=>`<option ${o===cur?"selected":""}>${h(o)}</option>`).join("");
   return `<select class="cell-input mgsel" data-field="${field}"><option value="" ${!cur?"selected":""}>—</option>${opts}<option value="__add__">➕ New…</option></select>`; }
+// sub-workstream select scoped to the row's workstream (options = p.subs[wsCode])
+function mgSelectSub(wsCode,v){ const cur=v==null?"":String(v);
+  const list=[...new Set([...subsFor(wsCode), cur].filter(x=>x!=="" && x!=null))].sort(alpha);
+  const opts=list.map(o=>`<option ${o===cur?"selected":""}>${h(o)}</option>`).join("");
+  return `<select class="cell-input mgsel" data-field="sub"><option value="" ${!cur?"selected":""}>—</option>${opts}<option value="__add__">➕ New…</option></select>`; }
 
 /* ---------- data model + persistence ---------- */
 function mkTasks(arr){ return arr.map((r,i)=>{ const o={}; COLS.forEach((c,j)=>o[c]=r[j]); o.uid=i; return o; }); }
@@ -818,7 +838,7 @@ function autoStatus(d){
   if(new Date(d.due) < TODAY) d.status="Overdue";
   else if(d.status==="Overdue") d.status = (d.pct>0 ? "In Progress" : "Not Started");
 }
-function recomputeProject(p){ ensureLists(p); p.tasks.forEach(d=>{ if(d.ms==="Ja")d.ms="Yes"; else if(d.ms==="Nein")d.ms="No";
+function recomputeProject(p){ ensureLists(p); ensureSubs(p); p.tasks.forEach(d=>{ if(d.ms==="Ja")d.ms="Yes"; else if(d.ms==="Nein")d.ms="No";
   if(d.status==="Delayed") d.status="Overdue";     // migrate old status value
   if(!Array.isArray(d.todos)) d.todos=[]; if(d.format==null) d.format=""; if(d.revision==null) d.revision="";
   if(d.todos.length){ d.pct=Math.round(d.todos.filter(t=>t.done).length/d.todos.length*100); }   // % auto-derived from to-dos
@@ -1413,7 +1433,7 @@ function renderTable(){
   document.getElementById("tbody").innerHTML = rows.map(d=>`
     <tr class="${d.ms==="Yes"?"msrow":""} ${cp.has(normId(d.tid))?"critrow":""}" data-uid="${d.uid}">
       <td><select class="cell-input wsedit" data-field="ws">${wsOpt(d.ws)}</select></td>
-      <td>${mgSelect("sub",d.sub)}</td>
+      <td>${mgSelectSub(d.ws,d.sub)}</td>
       <td class="tid">${cp.has(normId(d.tid))?'<span class="critflag" title="Critical path">⚠</span>':''}${d.tid}</td>
       <td class="tk"><div class="ce" contenteditable data-field="task">${h(d.task)}</div></td>
       <td class="desc"><div class="ce" contenteditable data-field="desc">${h(d.desc)}</div></td>
@@ -1833,19 +1853,31 @@ function doImport(){
 /* ---------- WORKSTREAM MANAGEMENT (per project) ---------- */
 let WSMGR={rows:[]};
 function wsUsage(code){ return DATA.filter(d=>d.ws===code).length; }
-function openWsManager(){ WSMGR={rows:pWS(PROJECTS[ACTIVE]).map(([n,a])=>({orig:a,name:n,code:a}))}; renderWsManager(); }
+function openWsManager(){ const p=PROJECTS[ACTIVE]; ensureSubs(p);
+  WSMGR={rows:pWS(p).map(([n,a])=>({orig:a,name:n,code:a,subs:[...(p.subs[a]||[])]}))}; renderWsManager(); }
 function renderWsManager(){
-  const rows=WSMGR.rows.map((r,i)=>`<tr data-i="${i}">
-    <td><input class="ws-name" value="${h(r.name)}" placeholder="Workstream name" style="width:100%"></td>
-    <td><input class="ws-code" value="${h(r.code)}" placeholder="Code" style="width:96px;text-transform:uppercase"></td>
-    <td style="text-align:center;color:var(--muted)">${r.orig?wsUsage(r.orig):0}</td>
-    <td><button class="iconbtn" title="Remove" onclick="wsMgrRemove(${i})">✕</button></td></tr>`).join("");
-  const html=`<div class="imp-card" style="width:min(640px,96vw)">
-    <div class="imp-head"><b>🗂 Workstreams · ${h(PROJECTS[ACTIVE].name)}</b><button class="iconbtn" onclick="closeWsModal()">✕</button></div>
-    <div class="imp-body">
-      <p class="note" style="margin-top:0">Define this project's workstream structure. The code (abbreviation) appears in the task IDs (e.g. <b>PLAN-01</b>). Applies to this project only.</p>
-      <table class="imp-map" style="table-layout:auto"><thead><tr><th>Workstream</th><th>Code</th><th>Tasks</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-      <button class="btn ghost" style="margin-top:10px" onclick="wsMgrAdd()">➕ Add workstream</button>
+  const cards=WSMGR.rows.map((r,i)=>{
+    const subRows=(r.subs||[]).map((s,j)=>`<div class="wsm-sub" data-i="${i}" data-j="${j}" style="display:flex;gap:6px;align-items:center;margin:3px 0 3px 18px">
+        <span style="color:var(--muted)">↳</span>
+        <input class="wsm-subval" value="${h(s)}" placeholder="Sub-workstream name" style="flex:1">
+        <button class="iconbtn" title="Remove sub-workstream" onclick="wsMgrRemoveSub(${i},${j})">✕</button></div>`).join("");
+    return `<div class="wsm-card" data-i="${i}" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px">
+      <div class="wsm-head" style="display:flex;gap:6px;align-items:center">
+        <input class="ws-name" value="${h(r.name)}" placeholder="Workstream name" style="flex:1">
+        <input class="ws-code" value="${h(r.code)}" placeholder="Code" style="width:90px;text-transform:uppercase">
+        <span class="note" style="width:56px;text-align:center">${r.orig?wsUsage(r.orig):0} task(s)</span>
+        <button class="iconbtn" title="Remove workstream" onclick="wsMgrRemove(${i})">✕</button>
+      </div>
+      <div class="wsm-subs" style="margin-top:6px">${subRows||'<div class="note" style="margin-left:18px">No sub-workstreams yet.</div>'}</div>
+      <button class="btn ghost" style="margin:6px 0 0 18px;font-size:12px" onclick="wsMgrAddSub(${i})">➕ Add sub-workstream</button>
+    </div>`;
+  }).join("");
+  const html=`<div class="imp-card" style="width:min(680px,96vw);max-height:92vh;display:flex;flex-direction:column">
+    <div class="imp-head"><b>🗂 Workstreams &amp; sub-workstreams · ${h(PROJECTS[ACTIVE].name)}</b><button class="iconbtn" onclick="closeWsModal()">✕</button></div>
+    <div class="imp-body" style="overflow:auto">
+      <p class="note" style="margin-top:0">Define this project's workstreams and, under each, any number of sub-workstreams. The code (abbreviation) appears in the task IDs (e.g. <b>PLAN-01</b>). Applies to this project only.</p>
+      ${cards}
+      <button class="btn ghost" style="margin-top:4px" onclick="wsMgrAdd()">➕ Add workstream</button>
     </div>
     <div class="imp-foot">
       <span class="note">Removed workstreams still in use are kept as an external group.</span>
@@ -1859,16 +1891,19 @@ function renderWsManager(){
   m.innerHTML=html; m.style.display="flex";
 }
 function syncWsmgr(){ const out=[];
-  document.querySelectorAll("#wsModal tbody tr").forEach(tr=>{ const i=+tr.dataset.i, o=WSMGR.rows[i];
-    out.push({orig:o?o.orig:"", name:tr.querySelector(".ws-name").value, code:tr.querySelector(".ws-code").value}); });
+  document.querySelectorAll("#wsModal .wsm-card").forEach(card=>{ const i=+card.dataset.i, o=WSMGR.rows[i];
+    const subs=[...card.querySelectorAll(".wsm-subval")].map(inp=>inp.value);
+    out.push({orig:o?o.orig:"", name:card.querySelector(".ws-name").value, code:card.querySelector(".ws-code").value, subs}); });
   WSMGR.rows=out; }
-function wsMgrAdd(){ syncWsmgr(); WSMGR.rows.push({orig:"",name:"",code:""}); renderWsManager(); }
+function wsMgrAdd(){ syncWsmgr(); WSMGR.rows.push({orig:"",name:"",code:"",subs:[]}); renderWsManager(); }
 function wsMgrRemove(i){ syncWsmgr(); WSMGR.rows.splice(i,1); renderWsManager(); }
-function wsMgrReset(){ if(confirm("Reset workstreams to the default list?")){ WSMGR.rows=WS.map(([n,a])=>({orig:a,name:n,code:a})); renderWsManager(); } }
+function wsMgrAddSub(i){ syncWsmgr(); if(!WSMGR.rows[i].subs) WSMGR.rows[i].subs=[]; WSMGR.rows[i].subs.push(""); renderWsManager(); }
+function wsMgrRemoveSub(i,j){ syncWsmgr(); WSMGR.rows[i].subs.splice(j,1); renderWsManager(); }
+function wsMgrReset(){ if(confirm("Reset workstreams to the default list?\nThis also clears all sub-workstreams.")){ WSMGR.rows=WS.map(([n,a])=>({orig:a,name:n,code:a,subs:[]})); renderWsManager(); } }
 function closeWsModal(){ const m=document.getElementById("wsModal"); if(m) m.style.display="none"; }
 function wsMgrSave(){
   syncWsmgr();
-  const rows=WSMGR.rows.map(r=>({orig:r.orig,name:String(r.name).trim(),code:String(r.code).trim().toUpperCase()})).filter(r=>r.name||r.code);
+  const rows=WSMGR.rows.map(r=>({orig:r.orig,name:String(r.name).trim(),code:String(r.code).trim().toUpperCase(),subs:r.subs||[]})).filter(r=>r.name||r.code);
   if(!rows.length){ alert("At least one workstream is required."); return; }
   const taken=new Set();
   rows.forEach(r=>{ if(!r.name) r.name=r.code; if(!r.code) r.code=deriveWsCode(r.name,taken);
@@ -1876,6 +1911,8 @@ function wsMgrSave(){
   const p=PROJECTS[ACTIVE];
   rows.forEach(r=>{ if(r.orig && r.orig!==r.code) p.tasks.forEach(d=>{ if(d.ws===r.orig) d.ws=r.code; }); });
   p.ws=rows.map(r=>[r.name,r.code]);
+  const subs={}; rows.forEach(r=>{ const list=[]; (r.subs||[]).forEach(s=>{ const v=String(s).trim(); if(v && !list.includes(v)) list.push(v); }); subs[r.code]=list; });
+  p.subs=subs;
   recomputeProject(p); setActive(ACTIVE); save(); rebuildAll(); closeWsModal(); markSaved();
 }
 
@@ -1883,7 +1920,7 @@ function wsMgrSave(){
 let LMGR=null;
 function lmUsage(field,val){ return DATA.filter(d=>String(d[field]||"")===val).length; }
 function openListsManager(){ const p=PROJECTS[ACTIVE]; ensureLists(p);
-  LMGR={}; MGFIELDS.forEach(([f])=>{ LMGR[f]=listFor(f).map(v=>({orig:v,val:v})); }); renderListsManager(); }
+  LMGR={}; MGFIELDS.filter(([f])=>f!=="sub").forEach(([f])=>{ LMGR[f]=listFor(f).map(v=>({orig:v,val:v})); }); renderListsManager(); }
 function renderListsManager(){
   const section=([f,label])=>{
     const rows=LMGR[f].map((r,i)=>`<tr data-i="${i}">
@@ -1900,7 +1937,7 @@ function renderListsManager(){
     <div class="imp-head"><b>🏷 Managed lists · ${h(PROJECTS[ACTIVE].name)}</b><button class="iconbtn" onclick="closeListsModal()">✕</button></div>
     <div class="imp-body" style="overflow:auto">
       <p class="note" style="margin-top:0">Edit the drop-down options for this project's tasks. Renaming an entry updates every task that uses it; values still used by a task are kept even if removed here. Applies to this project only.</p>
-      ${MGFIELDS.map(section).join("")}
+      ${MGFIELDS.filter(([f])=>f!=="sub").map(section).join("")}
     </div>
     <div class="imp-foot"><span class="note">Status &amp; Priority use the standard project-management vocabulary; Workstreams have their own editor.</span>
       <span style="flex:1"></span>
@@ -1910,7 +1947,7 @@ function renderListsManager(){
   if(!m){ m=document.createElement("div"); m.id="listsModal"; m.className="imp-overlay"; document.body.appendChild(m); }
   m.innerHTML=html; m.style.display="flex";
 }
-function lmSync(){ MGFIELDS.forEach(([f])=>{ const out=[];
+function lmSync(){ MGFIELDS.filter(([f])=>f!=="sub").forEach(([f])=>{ const out=[];
   document.querySelectorAll(`#listsModal tbody[data-field="${f}"] tr`).forEach(tr=>{ const inp=tr.querySelector(".lm-val"); if(!inp) return;
     const i=+tr.dataset.i, o=LMGR[f][i]; out.push({orig:o?o.orig:"", val:inp.value}); }); LMGR[f]=out; }); }
 function lmAdd(f){ lmSync(); LMGR[f].push({orig:"",val:""}); renderListsManager(); }
@@ -1919,7 +1956,7 @@ function lmFromData(f){ lmSync(); const have=new Set(LMGR[f].map(r=>String(r.val
   distinctVals(DATA,f).forEach(v=>{ if(!have.has(v)){ LMGR[f].push({orig:v,val:v}); have.add(v); } }); renderListsManager(); }
 function closeListsModal(){ const m=document.getElementById("listsModal"); if(m) m.style.display="none"; }
 function lmSave(){ lmSync(); const p=PROJECTS[ACTIVE]; ensureLists(p);
-  MGFIELDS.forEach(([f])=>{
+  MGFIELDS.filter(([f])=>f!=="sub").forEach(([f])=>{
     LMGR[f].forEach(r=>{ const nv=String(r.val).trim(); if(r.orig && nv && r.orig!==nv) p.tasks.forEach(d=>{ if(String(d[f]||"")===r.orig) d[f]=nv; }); });
     const list=[]; LMGR[f].forEach(r=>{ const nv=String(r.val).trim(); if(nv && !list.includes(nv)) list.push(nv); });
     p.lists[f]=list;
@@ -2102,8 +2139,9 @@ tbody.addEventListener("change", e=>{
   const el=e.target, tr=el.closest("tr"); if(!tr) return; const d=byUid(tr.dataset.uid); if(!d) return;
   const f=el.dataset.field; if(!f) return;
   if(el.classList.contains("mgsel") && el.value==="__add__"){           // inline "➕ New…" option
-    const nv=(prompt("Add new "+MGLABEL(f)+":","")||"").trim();
-    if(nv){ addToList(f,nv); d[f]=nv; d.upd=TODAY_ISO; recompute(); save(); }
+    const label = f==="sub" ? "Sub-Workstream" : MGLABEL(f);
+    const nv=(prompt("Add new "+label+":","")||"").trim();
+    if(nv){ if(f==="sub"){ addSubTo(d.ws,nv); } else { addToList(f,nv); } d[f]=nv; d.upd=TODAY_ISO; recompute(); save(); }
     renderTable(); refreshStats(); markSaved(); return;                 // re-render (reverts the select if cancelled)
   }
   if(f==="ws"){ if(el.value!==d.ws){ d.ws=el.value; d.no=nextNo(d.ws); } }
