@@ -1013,6 +1013,9 @@ function applyCompanyTheme(company){
   if(c.theme){ for(const k in c.theme) r.style.setProperty(k,c.theme[k]); }
   const logo=document.querySelector("header .brand .logo"), title=document.getElementById("hdrTitle"), sub=document.querySelector("header .brand .sub");
   if(logo) logo.textContent=c.logo; if(title) title.textContent=c.title; if(sub) sub.textContent=c.sub;
+  // keep the print/PDF header (shown only when printing) in sync with the company
+  const pLogo=document.querySelector(".print-header .logo"), pTitle=document.querySelector(".print-header .ph-t b");
+  if(pLogo) pLogo.textContent=c.logo; if(pTitle) pTitle.textContent=c.title+" · "+c.sub;
 }
 
 /* ---------- STATUS REPORT (1-Seiten-PDF) ---------- */
@@ -1046,8 +1049,8 @@ function projectReportHTML(p){
   </div>
   <div class="report-doc">
     <div class="rep-band">
-      <div class="rb-l"><div class="logo">EW</div>
-        <div><h2>Status report · ${h(p.name)}</h2><div class="rb-sub">Eurowings Project Management Cockpit · Trainings Department (TD) · ${h(p.fleet)}</div></div></div>
+      <div class="rb-l"><div class="logo">${h(COMPANIES[companyOf(p)].logo)}</div>
+        <div><h2>Status report · ${h(p.name)}</h2><div class="rb-sub">${h(COMPANIES[companyOf(p)].title)} · ${h(COMPANIES[companyOf(p)].sub)} · ${h(p.fleet)}</div></div></div>
       <div class="rb-r"><b>${ht}</b><br>As of 25 Jun 2026 · ${h(p.lead)}</div>
     </div>
     <div class="rep-pad">
@@ -1687,7 +1690,8 @@ function doCustomPrint(){
   let pa=document.getElementById("printArea");
   if(!pa){ pa=document.createElement("div"); pa.id="printArea"; document.body.appendChild(pa); }
   const p=PROJECTS[ACTIVE];
-  pa.innerHTML=`<div class="print-head2"><div><b>Eurowings Project Management Cockpit · Trainings Department (TD)</b><div>${h(p?p.name:"")} · Tasks</div></div>`
+  const ci=COMPANIES[companyOf(p)];
+  pa.innerHTML=`<div class="print-head2"><div><b>${h(ci.title)} · ${h(ci.sub)}</b><div>${h(p?p.name:"")} · Tasks</div></div>`
     +`<div style="text-align:right">As of ${de(TODAY_ISO)}<br>${currentRows().length} tasks</div></div>`+buildPrintTableHTML();
   closePrintDialog();
   document.body.classList.add("print-custom");
@@ -1704,12 +1708,13 @@ function exportCSV(){
   const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
   const rows=currentRows().map(d=>[wsName(d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),
     d.dur,d.prio,d.status,d.pct+"%",d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment].map(esc).join(";"));
-  const csv="﻿"+[head.map(esc).join(";"),...rows,"",esc(COPYRIGHT)].join("\r\n");
+  const ci=COMPANIES[companyOf(PROJECTS[ACTIVE])];
+  const csv="﻿"+[esc(ci.title+" · "+ci.sub),head.map(esc).join(";"),...rows,"",esc(COPYRIGHT)].join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
   const fn=((PROJECTS[ACTIVE]&&PROJECTS[ACTIVE].name)||"Project").replace(/[^a-z0-9]+/gi,"_").replace(/^_|_$/g,"");
-  a.download="Eurowings_"+fn+"_Tasks.csv";
+  a.download=fnSafe(ci.name)+"_"+fn+"_Tasks.csv";
   a.click();
 }
 
@@ -1796,10 +1801,11 @@ function buildXlsx(sheets){
 function sheetNames(names){ const seen={}, out=[]; names.forEach(n=>{ let b=String(n||"Sheet").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,28)||"Sheet";
   let nm=b,k=2; while(seen[nm.toLowerCase()]){ nm=b.slice(0,28-(""+k).length-1)+" "+k; k++; } seen[nm.toLowerCase()]=1; out.push(nm); }); return out; }
 const TASK_HEAD=["Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner","Supporting departments","Start date","Due Date","Duration (days)","Priority","Status","% Completion","Milestone","Dependencies","Risks / Issues","Format","Revision","Last update","Comment"];
-function projectRows(p){ const rows=[TASK_HEAD.slice()];
+function projectRows(p){ const ci=COMPANIES[companyOf(p)];
+  const rows=[[ci.title+" · "+ci.sub],["Project: "+p.name+(p.fleet?" · "+p.fleet:"")+(p.lead?" · Lead: "+p.lead:"")],[],TASK_HEAD.slice()];
   p.tasks.forEach(d=>rows.push([wsNameFor(p,d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),d.dur,d.prio,d.status,d.pct,d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment]));
   return rows; }
-function summaryRows(){ const rows=[["Project","Fleet","Project Lead","Phase","Target date","Tasks","Open","Critical","Overdue","MS reached","MS total","Overall progress %","Status"]];
+function summaryRows(){ const rows=[["Project Management Cockpit · Portfolio"],[],["Project","Fleet","Project Lead","Phase","Target date","Tasks","Open","Critical","Overdue","MS reached","MS total","Overall progress %","Status"]];
   PROJECTS.forEach(p=>{ const s=projStats(p), ht={g:"On Track",a:"At Risk",r:"Critical"}[s.health];
     rows.push([p.name,p.fleet,p.lead,p.phase,de(p.eis),s.n,s.open,s.crit,s.r,s.msDone,s.ms,s.overall,ht]); });
   return rows; }
@@ -1808,10 +1814,10 @@ const withCopyright = rows => [...rows, [], [COPYRIGHT]];   // append a copyrigh
 function exportXLSXPortfolio(){
   const names=sheetNames(["Portfolio",...PROJECTS.map(p=>p.name)]);
   const sheets=[{name:names[0],rows:withCopyright(summaryRows())},...PROJECTS.map((p,i)=>({name:names[i+1],rows:withCopyright(projectRows(p))}))];
-  download(buildXlsx(sheets),"Eurowings_Training-Portfolio.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  download(buildXlsx(sheets),"Training-Portfolio.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 }
 function exportXLSXProject(p){
-  download(buildXlsx([{name:sheetNames([p.name])[0],rows:withCopyright(projectRows(p))}]),"Eurowings_"+fnSafe(p.name)+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  download(buildXlsx([{name:sheetNames([p.name])[0],rows:withCopyright(projectRows(p))}]),fnSafe(COMPANIES[companyOf(p)].name)+"_"+fnSafe(p.name)+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 }
 
 /* ---------- EXCEL / CSV IMPORT ---------- */
