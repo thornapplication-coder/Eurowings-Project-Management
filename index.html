@@ -1653,7 +1653,7 @@ function buildPrintTableHTML(){
   const rows=currentRows();
   const head=cols.map(c=>`<th>${h(c.label)}</th>`).join("");
   const body=rows.map(d=>`<tr>${cols.map(c=>{const v=c.val(d); return `<td>${h(v==null?"":String(v))}</td>`;}).join("")}</tr>`).join("");
-  return `<table class="print-tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  return `<table class="print-tbl" style="width:100%;table-layout:fixed;min-width:0;border-collapse:collapse">${`<thead><tr>${head}</tr></thead><tbody>${body}</tbody>`}</table>`;
 }
 function renderPrintPreview(){ const el=document.getElementById("printPrev"); if(el) el.innerHTML=buildPrintTableHTML();
   const n=document.getElementById("printCount"); if(n) n.textContent=currentRows().length+" rows"; }
@@ -1685,8 +1685,11 @@ function openPrintDialog(){
     m.addEventListener("change",e=>{ const k=e.target.dataset.pcol; if(k){ PRINT_SEL[k]=e.target.checked; renderPrintPreview(); } }); }
   m.innerHTML=html; m.style.display="flex"; renderPrintPreview();
 }
+function syncPrintSelFromDOM(){ ensurePrintSel();
+  document.querySelectorAll("#printModal input[data-pcol]").forEach(cb=>{ PRINT_SEL[cb.dataset.pcol]=cb.checked; }); }
 function doCustomPrint(){
-  const cols=selectedPrintCols(); if(!cols.length){ return; }
+  syncPrintSelFromDOM();                       // trust the checkboxes the user actually sees
+  const cols=selectedPrintCols(); if(!cols.length){ alert("Select at least one column to print."); return; }
   let pa=document.getElementById("printArea");
   if(!pa){ pa=document.createElement("div"); pa.id="printArea"; document.body.appendChild(pa); }
   const p=PROJECTS[ACTIVE];
