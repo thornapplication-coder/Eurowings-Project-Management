@@ -782,7 +782,7 @@ const T_E2 = [
 const WSNAME = Object.fromEntries(WS.map(w=>[w[1],w[0]]));
 const COLS = ["ws","sub","no","task","desc","resp","support","start","due","prio","status","pct","ms","deps","risk","upd","comment"];
 const TODAY = (()=>{ const d=new Date(); d.setHours(0,0,0,0); return d; })();
-const TODAY_ISO = TODAY.getFullYear()+"-"+pad(TODAY.getMonth()+1)+"-"+pad(TODAY.getDate());
+const TODAY_ISO = TODAY.getFullYear()+"-"+String(TODAY.getMonth()+1).padStart(2,"0")+"-"+String(TODAY.getDate()).padStart(2,"0");
 const KEY = "ew_pm_portfolio_v2";
 const COPYRIGHT = "© Copyright by Patrick Thorn";
 // Full Eurowings status set. rag buckets: g=done · b=in progress · a=planned/hold · r=overdue · x=excluded(N/A)
