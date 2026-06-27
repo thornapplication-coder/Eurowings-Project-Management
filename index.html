@@ -405,6 +405,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<script>
+/* Diagnostic: surface any uncaught script error on screen (helps debug Safari/iOS where buttons "do nothing" because the main script failed to run). Registered before the main script so it also catches its parse/runtime errors. */
+(function(){
+  function show(msg){ try{ var b=document.getElementById("errbar"); if(!b){ b=document.createElement("div"); b.id="errbar";
+    b.style.cssText="position:fixed;z-index:99999;left:0;right:0;bottom:0;max-height:45%;overflow:auto;background:#a00;color:#fff;font:12px/1.4 monospace;padding:10px;white-space:pre-wrap";
+    var x=document.createElement("button"); x.textContent="✕"; x.style.cssText="float:right;background:#fff;color:#a00;border:none;border-radius:4px;font-weight:700;padding:2px 8px;cursor:pointer";
+    x.onclick=function(){ b.style.display="none"; }; b.appendChild(x); (document.body||document.documentElement).appendChild(b); }
+    b.appendChild(document.createTextNode(msg+"\n")); }catch(_){} }
+  window.addEventListener("error", function(e){ show("JS error: "+(e.message||(e.error&&e.error.message)||e.error)+"\n"+(e.filename||"")+":"+(e.lineno||"")+":"+(e.colno||"")); });
+  window.addEventListener("unhandledrejection", function(e){ show("Promise error: "+((e.reason&&(e.reason.message||e.reason))||"unknown")); });
+})();
+</script>
 <!-- Login gate (cloud sync) -->
 <div id="authGate" class="auth-overlay" style="display:none">
   <div class="auth-card">
