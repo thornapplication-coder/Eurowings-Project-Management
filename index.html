@@ -549,7 +549,7 @@
     <div class="tablewrap">
       <table id="tbl">
         <thead><tr>
-          <th data-sort="ws">Workstream<span class="ar"></span></th><th data-sort="sub">Sub-Workstream<span class="ar"></span></th><th data-sort="tid">Task-ID<span class="ar"></span></th><th data-sort="task">Task / Deliverable<span class="ar"></span></th>
+          <th data-sort="ref">Reference<span class="ar"></span></th><th data-sort="ws">Workstream<span class="ar"></span></th><th data-sort="sub">Sub-Workstream<span class="ar"></span></th><th data-sort="tid">Task-ID<span class="ar"></span></th><th data-sort="task">Task / Deliverable<span class="ar"></span></th>
           <th data-sort="desc">Description<span class="ar"></span></th><th data-sort="resp">Owner<span class="ar"></span></th><th data-sort="support">Supporting depts<span class="ar"></span></th><th data-sort="start">Start<span class="ar"></span></th>
           <th data-sort="due">Due Date<span class="ar"></span></th><th data-sort="dur">Duration (days)<span class="ar"></span></th><th data-sort="prio">Priority<span class="ar"></span></th><th data-sort="status">Status<span class="ar"></span></th><th data-sort="pct">% Compl.<span class="ar"></span></th>
           <th data-sort="ms">Milestone<span class="ar"></span></th><th data-sort="deps">Dependencies<span class="ar"></span></th><th data-sort="risk">Risks / Issues<span class="ar"></span></th><th data-sort="format">Format<span class="ar"></span></th><th data-sort="revision">Revision<span class="ar"></span></th><th data-sort="upd">Last update<span class="ar"></span></th><th data-sort="comment">Comment<span class="ar"></span></th><th>Action</th>
@@ -887,7 +887,7 @@ function autoStatus(d){
 }
 function recomputeProject(p){ ensureLists(p); ensureSubs(p); p.tasks.forEach(d=>{ if(d.ms==="Ja")d.ms="Yes"; else if(d.ms==="Nein")d.ms="No";
   if(d.status==="Delayed") d.status="Overdue";     // migrate old status value
-  if(!Array.isArray(d.todos)) d.todos=[]; if(d.format==null) d.format=""; if(d.revision==null) d.revision="";
+  if(!Array.isArray(d.todos)) d.todos=[]; if(d.format==null) d.format=""; if(d.revision==null) d.revision=""; if(d.ref==null) d.ref="";
   d.todos.forEach(t=>{ if(!t.status) t.status = t.done?"Completed":"Not Started"; t.done = (t.status==="Completed"); });
   if(d.todos.length){ d.pct=Math.round(d.todos.filter(t=>t.done).length/d.todos.length*100); }   // % auto-derived from to-dos
   d.tid=d.ws+"-"+pad(d.no); d.dur=(d.start&&d.due)?days(d.start,d.due):""; autoStatus(d); }); }
@@ -1262,10 +1262,8 @@ function tplTargetDate(tpl){ const today=new Date(); today.setHours(0,0,0,0);
 
 let NP_SEL="eis", NP_FORM={}, NP_EDIT=false, NP_DRAFT={ws:[],tasks:[]};
 function newProject(){ NP_SEL="eis"; NP_FORM={}; NP_EDIT=false; loadDraft(); renderNewProject(); }
-// load an editable working copy of the selected template (workstreams + task skeleton)
-function loadDraft(){ const tpl=TEMPLATES.find(t=>t.id===NP_SEL)||TEMPLATES[0];
-  NP_DRAFT={ ws:(tpl.ws||WS).map(w=>[w[0],w[1]]),
-    tasks: tpl.tasks.map(r=>({ws:r[0],sub:r[1]||"",title:r[2],prio:r[3]||"Medium",ms:!!r[4],sw:r[5],dw:r[6],deps:r[7]||"-"})) }; }
+// New projects start empty with the standard workstreams (templates removed)
+function loadDraft(){ NP_DRAFT={ ws: WS.map(w=>[w[0],w[1]]), tasks: [] }; }
 function npCapture(){ const g=id=>{ const e=document.getElementById(id); return e?e.value:undefined; };
   NP_FORM={ name:g("npName"), fleet:g("npFleet"), lead:g("npLead"), target:g("npTarget"), company:g("npCompany") }; }
 function selectTpl(id){ npCapture(); NP_SEL=id; delete NP_FORM.target; loadDraft(); renderNewProject(); }
@@ -1302,58 +1300,23 @@ function draftToTasks(draft,wsList){ const today=new Date(); today.setHours(0,0,
       desc:"", resp:"", support:"", start:iso(sw*7), due:iso((sw+dw)*7), prio:t.prio||"Medium", status:"Not Started", pct:0,
       ms:t.ms?"Yes":"No", deps:String(t.deps||"").trim()||"-", risk:"-", upd:iso(0), comment:"", format:"", revision:"", todos:[] }; }); }
 function renderNewProject(){
-  const tpl=TEMPLATES.find(t=>t.id===NP_SEL)||TEMPLATES[0];
-  const cards=TEMPLATES.map(t=>{ const n=t.tasks.length, ms=tplCountMs(t), wsn=tplWsCount(t);
-    const meta=n?`${n} tasks · ${ms} milestones · ${wsn} workstreams`:`empty · ${wsn} workstreams`;
-    return `<div class="tpl-card ${t.id===NP_SEL?'sel':''}" onclick="selectTpl('${t.id}')">
-      <div class="tpl-ico">${t.icon}</div><div class="tpl-name">${h(t.name)}</div>
-      <div class="tpl-desc">${h(t.desc)}</div><div class="tpl-meta">${meta}</div></div>`; }).join("");
-  const defName=tpl.id==="blank"?"New project":tpl.name;
-  const prev=NP_FORM.name;
-  const nameVal=(prev===undefined||prev===""||prev==="New project"||TEMPLATES.some(t=>t.name===prev))?defName:prev;
+  const nameVal=NP_FORM.name||"New project";
   const fleetVal=NP_FORM.fleet||"";
   const leadVal=NP_FORM.lead!==undefined?NP_FORM.lead:"Chief Training Captain";
   const targetVal=NP_FORM.target||draftTargetDate(NP_DRAFT);
-  const wsRows=NP_DRAFT.ws.map(([n,c],i)=>`<tr>
-    <td><input data-dk="ws" data-di="${i}" data-df="name" value="${h(n)}"></td>
-    <td><span class="tpl-meta">${h(c)}</span></td>
-    <td><button class="iconbtn" title="Remove" onclick="npWsDel(${i})">✕</button></td></tr>`).join("");
-  const taskRows=NP_DRAFT.tasks.map((t,i)=>`<tr>
-    <td><select data-dk="task" data-di="${i}" data-df="ws">${npWsOptions(t.ws)}</select></td>
-    <td><input data-dk="task" data-di="${i}" data-df="sub" value="${h(t.sub||"")}"></td>
-    <td><input data-dk="task" data-di="${i}" data-df="title" value="${h(t.title||"")}"></td>
-    <td><select data-dk="task" data-di="${i}" data-df="prio">${optSorted(PRIOS,t.prio||"Medium",false)}</select></td>
-    <td style="text-align:center"><input type="checkbox" data-dk="task" data-di="${i}" data-df="ms" ${t.ms?"checked":""}></td>
-    <td><input class="num" type="number" min="0" data-dk="task" data-di="${i}" data-df="sw" value="${t.sw==null?0:t.sw}"></td>
-    <td><input class="num" type="number" min="1" data-dk="task" data-di="${i}" data-df="dw" value="${t.dw==null?1:t.dw}"></td>
-    <td><input data-dk="task" data-di="${i}" data-df="deps" value="${h(t.deps||"")}"></td>
-    <td><button class="iconbtn" title="Remove" onclick="npTaskDel(${i})">✕</button></td></tr>`).join("");
-  const editor = NP_EDIT ? `<div class="np-edit">
-      <h4>Workstreams (${NP_DRAFT.ws.length})</h4>
-      <table class="np-tbl" style="table-layout:auto"><thead><tr><th>Name</th><th style="width:80px">Code</th><th style="width:34px"></th></tr></thead><tbody>${wsRows||`<tr><td colspan="3" class="note">No workstreams.</td></tr>`}</tbody></table>
-      <button class="btn ghost" style="margin:6px 0 14px" onclick="npWsAdd()">➕ Add workstream</button>
-      <h4>Tasks &amp; milestones (${NP_DRAFT.tasks.length})</h4>
-      <div class="np-scroll"><table class="np-tbl np-min"><thead><tr><th style="width:150px">Workstream</th><th>Sub-Workstream</th><th>Task / Deliverable</th><th style="width:78px">Priority</th><th style="width:34px">MS</th><th style="width:60px">Start wk</th><th style="width:56px">Dur wk</th><th style="width:90px">Depends on</th><th style="width:34px"></th></tr></thead>
-        <tbody>${taskRows||`<tr><td colspan="9" class="note">No tasks yet — add one below.</td></tr>`}</tbody></table></div>
-      <button class="btn ghost" style="margin-top:6px" onclick="npTaskAdd()">➕ Add task</button>
-      <p class="note">“Start wk / Dur wk” are weeks from the project start (today); task IDs use the workstream code. Everything stays editable after creation too.</p>
-    </div>` : "";
-  const html=`<div class="imp-card" style="width:min(940px,96vw);max-height:92vh;display:flex;flex-direction:column">
+  const html=`<div class="imp-card" style="width:min(520px,96vw);max-height:92vh;display:flex;flex-direction:column">
     <div class="imp-head"><b>✚ New project</b><button class="iconbtn" onclick="closeNewProject()">✕</button></div>
     <div class="imp-body" style="overflow:auto">
-      <p class="note" style="margin-top:0">Choose a template, then review &amp; edit its workstreams and tasks before creating. Dates are set relative to today; everything stays editable afterwards.</p>
-      <div class="tpl-grid">${cards}</div>
+      <p class="note" style="margin-top:0">Creates an empty project with the standard workstreams. Add tasks, workstreams and sub-workstreams afterwards.</p>
       <div class="np-form">
         <label>Company<select id="npCompany"><option value="EW" ${(NP_FORM.company||"EW")==="EW"?"selected":""}>Eurowings</option><option value="AAA" ${NP_FORM.company==="AAA"?"selected":""}>Aviation Academy Austria</option></select></label>
         <label>Project name<input id="npName" value="${h(nameVal)}"></label>
-        <label>Fleet / type<input id="npFleet" value="${h(fleetVal)}" placeholder="e.g. new aircraft type"></label>
+        <label>Fleet / type<input id="npFleet" value="${h(fleetVal)}" placeholder="optional"></label>
         <label>Project lead<input id="npLead" value="${h(leadVal)}"></label>
         <label>Target date<input id="npTarget" type="date" value="${targetVal}"></label>
       </div>
-      <span class="np-toggle" onclick="npToggleEdit()">${NP_EDIT?"▾":"▸"} Review &amp; edit content · ${NP_DRAFT.tasks.length} tasks · ${NP_DRAFT.ws.length} workstreams</span>
-      ${editor}
     </div>
-    <div class="imp-foot"><span class="note">Add / rename / remove workstreams &amp; tasks above before creating.</span>
+    <div class="imp-foot"><span class="note">Everything stays editable after creation.</span>
       <span style="flex:1"></span>
       <button class="btn ghost" onclick="closeNewProject()">Cancel</button>
       <button class="btn" onclick="createFromTpl()">Create project</button></div></div>`;
@@ -1616,6 +1579,7 @@ function renderTable(){
   const rows=currentRows(), cp=SHOW_CP?criticalPath(DATA).set:new Set();
   document.getElementById("tbody").innerHTML = rows.map(d=>`
     <tr class="${d.ms==="Yes"?"msrow":""} ${cp.has(normId(d.tid))?"critrow":""}" data-uid="${d.uid}">
+      <td><div class="ce" contenteditable data-field="ref">${h(d.ref||"")}</div></td>
       <td><select class="cell-input wsedit" data-field="ws">${wsOpt(d.ws)}</select></td>
       <td>${mgSelectSub(d.ws,d.sub)}</td>
       <td class="tid">${cp.has(normId(d.tid))?'<span class="critflag" title="Critical path">⚠</span>':''}${h(d.tid)}</td>
@@ -1647,6 +1611,7 @@ function renderTable(){
 
 /* ---------- PRINT with column selection (Tasks) ---------- */
 const PRINT_COLS=[
+  {key:"ref",label:"Reference",val:d=>d.ref||""},
   {key:"ws",label:"Workstream",val:d=>wsName(d.ws)},
   {key:"sub",label:"Sub-Workstream",val:d=>d.sub},
   {key:"tid",label:"Task-ID",val:d=>d.tid},
@@ -1730,11 +1695,11 @@ function doCustomPrint(){
 
 /* ---------- CSV EXPORT ---------- */
 function exportCSV(){
-  const head=["Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner",
+  const head=["Reference","Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner",
     "Supporting departments","Start date","Due Date","Duration (days)","Priority","Status","% Completion",
     "Milestone","Dependencies","Risks / Issues","Format","Revision","Last update","Comment"];
   const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const rows=currentRows().map(d=>[wsName(d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),
+  const rows=currentRows().map(d=>[d.ref||"",wsName(d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),
     d.dur,d.prio,d.status,d.pct+"%",d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment].map(esc).join(";"));
   const ci=COMPANIES[companyOf(PROJECTS[ACTIVE])];
   const csv="﻿"+[esc(ci.title+" · "+ci.sub),head.map(esc).join(";"),...rows,"",esc(COPYRIGHT)].join("\r\n");
@@ -1828,10 +1793,10 @@ function buildXlsx(sheets){
 }
 function sheetNames(names){ const seen={}, out=[]; names.forEach(n=>{ let b=String(n||"Sheet").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,28)||"Sheet";
   let nm=b,k=2; while(seen[nm.toLowerCase()]){ nm=b.slice(0,28-(""+k).length-1)+" "+k; k++; } seen[nm.toLowerCase()]=1; out.push(nm); }); return out; }
-const TASK_HEAD=["Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner","Supporting departments","Start date","Due Date","Duration (days)","Priority","Status","% Completion","Milestone","Dependencies","Risks / Issues","Format","Revision","Last update","Comment"];
+const TASK_HEAD=["Reference","Workstream","Sub-Workstream","Task-ID","Task / Deliverable","Description","Owner","Supporting departments","Start date","Due Date","Duration (days)","Priority","Status","% Completion","Milestone","Dependencies","Risks / Issues","Format","Revision","Last update","Comment"];
 function projectRows(p){ const ci=COMPANIES[companyOf(p)];
   const rows=[[ci.title+" · "+ci.sub],["Project: "+p.name+(p.fleet?" · "+p.fleet:"")+(p.lead?" · Lead: "+p.lead:"")],[],TASK_HEAD.slice()];
-  p.tasks.forEach(d=>rows.push([wsNameFor(p,d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),d.dur,d.prio,d.status,d.pct,d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment]));
+  p.tasks.forEach(d=>rows.push([d.ref||"",wsNameFor(p,d.ws),d.sub,d.tid,d.task,d.desc,d.resp,d.support,de(d.start),de(d.due),d.dur,d.prio,d.status,d.pct,d.ms,d.deps,d.risk,d.format||"",d.revision||"",de(d.upd),d.comment]));
   return rows; }
 function summaryRows(){ const rows=[["Project Management Cockpit · Portfolio"],[],["Project","Fleet","Project Lead","Phase","Target date","Tasks","Open","Critical","Overdue","MS reached","MS total","Overall progress %","Status"]];
   PROJECTS.forEach(p=>{ const s=projStats(p), ht={g:"On Track",a:"At Risk",r:"Critical"}[s.health];
@@ -1851,7 +1816,7 @@ function exportXLSXProject(p){
 /* ---------- EXCEL / CSV IMPORT ---------- */
 let IMP={sheets:[],si:0};
 const IMPORT_FIELDS=[
-  ["task","Task / Deliverable *"],["ws","Workstream"],["sub","Sub-Workstream"],["desc","Description"],
+  ["ref","Reference"],["task","Task / Deliverable *"],["ws","Workstream"],["sub","Sub-Workstream"],["desc","Description"],
   ["resp","Owner"],["support","Supporting departments"],["start","Start date"],["due","Due Date"],
   ["prio","Priority"],["status","Status"],["pct","% Completion"],["ms","Milestone"],
   ["deps","Dependencies"],["risk","Risks / Issues"],["format","Format"],["revision","Revision"],
@@ -1860,7 +1825,8 @@ const IMPORT_FIELDS=[
 const SYN={
   task:["task / deliverable","task/deliverable","aufgabe / deliverable","aufgabe/deliverable","aufgabe","deliverable","task","tätigkeit","taetigkeit","activity","titel","title","maßnahme","massnahme","thema","dokument","document"],
   ws:["workstream","work stream","arbeitspaket","arbeitspaket beschreibung","bereich","stream","kategorie","modul","gewerk","course","kurs","chapter group"],
-  sub:["sub-workstream","sub workstream","om-d reference","om-d ref","omd reference","reference","ref","chapter","kapitel","unterbereich","teilbereich","subkategorie","sub","section","abschnitt"],
+  ref:["reference","ref","om-d reference","om-d ref","omd reference","om d reference","omd ref","referenz"],
+  sub:["sub-workstream","sub workstream","chapter","kapitel","unterbereich","teilbereich","subkategorie","sub","section","abschnitt"],
   desc:["beschreibung","description","details","detail","inhalt","scope","content"],
   resp:["verantwortlich","verantwortlicher","responsible","owner","zuständig","zustaendig","lead","bearbeiter","changed by","geändert von","geaendert von","author","autor","editor","assignee"],
   support:["unterstützend","unterstuetzend","unterstützende","support","supporting","mitwirkende","beteiligte","accountable","consulted","informed"],
@@ -2098,7 +2064,7 @@ function doImport(){
     const task=get("task"); if(!task && !get("desc")) return;
     let pct=parsePct(get("pct")); let status=normStatus(get("status"),pct);
     if(status==="Completed" && map.pct==null) pct=100;
-    const t={ ws:normWS(get("ws"),defWs), sub:get("sub")||"–", task:task||"(untitled)", desc:get("desc"),
+    const t={ ref:get("ref")||"", ws:normWS(get("ws"),defWs), sub:get("sub")||"–", task:task||"(untitled)", desc:get("desc"),
       resp:get("resp"), support:get("support"), start:parseDateVal(get("start")), due:parseDateVal(get("due")),
       prio:normPrio(get("prio")), status, pct, ms:normYesNo(get("ms")), deps:get("deps")||"-",
       risk:get("risk")||"-", format:normFormat(get("format")), revision:get("revision"),
@@ -2443,7 +2409,7 @@ tbody.addEventListener("click", e=>{
 
 function addRow(){
   const ws=fWs.value||(pWS(PROJECTS[ACTIVE])[0]||WS[0])[1];
-  DATA.unshift({uid:UID++,ws,sub:"",no:nextNo(ws),task:"",desc:"",resp:"",support:"",
+  DATA.unshift({uid:UID++,ref:"",ws,sub:"",no:nextNo(ws),task:"",desc:"",resp:"",support:"",
     start:"",due:"",prio:"Medium",status:"Not Started",pct:0,ms:"No",deps:"",risk:"",upd:"",comment:"",format:"",revision:"",todos:[]});
   SORT={key:"",dir:1};                 // clear sorting so the new empty row stays on top
   recompute(); save(); renderTable(); refreshStats(); markSaved();
