@@ -799,6 +799,8 @@ const STATUS_META = {
 const STATUSES = Object.keys(STATUS_META);
 const FORMATS = ["","Articulate 360","PDF","PPT","SCORM only","WBT","WBT + PDF","WBT + PPT","WORD","WORD + PDF"];
 const PRIOS = ["High","Medium","Low"];
+// Standard people/departments for the Owner and Supporting-departments drop-downs
+const PEOPLE = ["Andreas Wyschkon","ATO EW","ATO Extern","Axel Thalmann","Christian Hose","CTC","CTC A320","CTC B737","Daniel Wnendt","Dennis Tatzel","Flugbetrieb","Frank Ödinger","Joost Jansen","Licencecontrol","Malack Salman","Markus Rieger","Martin Roithmayr","Milan Wilmes","Miro Bogner","NPCT / Deputy NPCT","Patrick Herr","Patrick Thorn","Referenten","Roland Dunst","Safety","Senior Trainer","Stephanie Heinen","Tim Burghard","Training Design","Ulf Westerhoff"];
 const statusDone = s => !!(STATUS_META[s]||{}).done;
 const statusRag  = s => (STATUS_META[s]||{}).rag || "a";
 const VIEWLBL = {portfolio:"Portfolio overview",dash:"Dashboard",table:"Master Task List",gantt:"Gantt / Timeline",todo:"To-Do",report:"Status report"};
@@ -850,7 +852,10 @@ function distinctVals(tasks,field){ const seen=[]; (tasks||[]).forEach(d=>{ cons
   if(v && v!=="–" && v!=="-" && !seen.includes(v)) seen.push(v); }); return seen; }
 function ensureLists(p){ if(!p.lists) p.lists={};
   if(!p.lists.format) p.lists.format=[...new Set([...FORMATS.filter(Boolean), ...distinctVals(p.tasks,"format")])];
-  ["resp","sub","support"].forEach(f=>{ if(!p.lists[f]) p.lists[f]=distinctVals(p.tasks,f); }); return p.lists; }
+  if(!p.lists.sub) p.lists.sub=distinctVals(p.tasks,"sub");
+  // Owner & Supporting departments share the standard people list (plus any values already used)
+  ["resp","support"].forEach(f=>{ p.lists[f]=[...new Set([...PEOPLE, ...(p.lists[f]||[]), ...distinctVals(p.tasks,f)])]; });
+  return p.lists; }
 function listFor(field){ const p=PROJECTS[ACTIVE]; ensureLists(p); return p.lists[field]||[]; }
 function addToList(field,val){ const v=String(val||"").trim(); if(!v) return;
   const p=PROJECTS[ACTIVE]; ensureLists(p); if(!p.lists[field].includes(v)) p.lists[field].push(v); }
